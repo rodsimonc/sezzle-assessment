@@ -1,0 +1,382 @@
+/* Layout and components. Colors, sizes and spacing come from tokens.css. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: 1.5;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+button:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* Page ---------------------------------------------------------------- */
+
+.app {
+  width: 100%;
+  max-width: 56rem;
+  margin-inline: auto;
+  padding: var(--space-4);
+}
+
+.app__title {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.app__layout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.calculator {
+  width: 100%;
+  max-width: 26rem;
+  margin-inline: auto;
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+/* Readout: display plus the error slot ------------------------------------ */
+
+.readout {
+  margin-bottom: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-display-bg);
+  border-radius: var(--radius-md);
+}
+
+.display {
+  position: relative;
+  min-width: 0;
+}
+
+.display__live {
+  min-width: 0;
+  text-align: right;
+}
+
+.display__expression,
+.display__value {
+  margin: 0;
+}
+
+.display__expression {
+  min-height: 1.5rem;
+  font-size: var(--text-sm);
+  line-height: 1.5rem;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.display__value {
+  font-weight: 500;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* The stylesheet picks the size from data-size, so no inline style is needed. */
+.display__value[data-size='lg'] {
+  font-size: clamp(2.25rem, 11vw, 3rem);
+}
+
+.display__value[data-size='md'] {
+  font-size: clamp(1.75rem, 8vw, 2.25rem);
+}
+
+.display__value[data-size='sm'] {
+  font-size: clamp(1.375rem, 6vw, 1.75rem);
+}
+
+.display__value[data-size='xs'] {
+  font-size: clamp(0.875rem, 4.4vw, 1.25rem);
+}
+
+.memory-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding-inline: var(--space-1);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+/* Two lines of room, so the keypad stays put when a message shows up. */
+.error-slot {
+  min-height: 2.75rem;
+  padding-top: var(--space-2);
+}
+
+.error-banner {
+  margin: 0;
+  padding-left: var(--space-3);
+  border-left: 3px solid var(--color-danger-border);
+  font-size: var(--text-sm);
+  line-height: 1.35;
+  color: var(--color-danger-text);
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+/* Keypad ------------------------------------------------------------------ */
+
+.keypad {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--keypad-gap);
+}
+
+.key {
+  min-width: 0;
+  min-height: var(--key-height);
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-size: var(--text-lg);
+  font-weight: 500;
+  line-height: 1;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .key {
+    transition:
+      filter 80ms ease-out,
+      transform 80ms ease-out;
+  }
+}
+
+.key:hover {
+  filter: var(--hover-filter);
+}
+
+.key:active {
+  filter: var(--active-filter);
+  transform: scale(0.97);
+}
+
+.key--digit {
+  background: var(--key-digit-bg);
+  color: var(--key-digit-text);
+  font-size: var(--text-xl);
+}
+
+.key--function {
+  background: var(--key-function-bg);
+  color: var(--key-function-text);
+}
+
+.key--memory {
+  background: var(--key-memory-bg);
+  border-color: var(--key-memory-border);
+  color: var(--key-memory-text);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.key--operator {
+  background: var(--key-operator-bg);
+  color: var(--key-operator-text);
+  font-size: var(--text-xl);
+}
+
+.key--equals {
+  background: var(--key-equals-bg);
+  color: var(--key-equals-text);
+  font-size: var(--text-xl);
+  font-weight: 600;
+}
+
+/* History: a disclosure below 768px, a side panel from 768px up ---------------- */
+
+.history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+  max-width: 26rem;
+  margin-inline: auto;
+}
+
+.history__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+}
+
+.history__chevron {
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-top: -0.25rem;
+  border-right: 2px solid currentcolor;
+  border-bottom: 2px solid currentcolor;
+  transform: rotate(45deg);
+}
+
+.history__toggle[aria-expanded='true'] .history__chevron {
+  margin-top: 0.25rem;
+  transform: rotate(225deg);
+}
+
+.history__panel {
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.history__panel[data-open='false'] {
+  display: none;
+}
+
+.history__header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: var(--space-2);
+}
+
+.history__title {
+  display: none;
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.history__clear {
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.history__empty {
+  margin: 0;
+  padding: var(--space-3) 0;
+  color: var(--color-text-muted);
+}
+
+.history__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-height: 40vh;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.history__entry {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.history__entry:hover {
+  background: var(--color-display-bg);
+}
+
+@media (min-width: 768px) {
+  .app {
+    padding: var(--space-6) var(--space-5);
+  }
+
+  .app__layout {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    gap: var(--space-5);
+  }
+
+  .calculator {
+    flex: 0 0 24rem;
+    margin-inline: 0;
+  }
+
+  .history {
+    flex: 0 1 20rem;
+    min-width: 0;
+    margin-inline: 0;
+  }
+
+  .history__toggle {
+    display: none;
+  }
+
+  .history__panel[data-open] {
+    display: block;
+  }
+
+  .history__header {
+    justify-content: space-between;
+  }
+
+  .history__title {
+    display: block;
+  }
+
+  .history__list {
+    max-height: 32rem;
+  }
+}

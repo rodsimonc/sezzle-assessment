@@ -1,0 +1,89 @@
+/*
+ * Design tokens. Light is the default; dark switches on with prefers-color-scheme.
+ * Every text and background pair below clears WCAG AA (4.5:1 for text, 3:1 for outlines).
+ */
+:root {
+  color-scheme: light dark;
+
+  /* Type scale. System fonts only: the CSP allows no remote fonts. */
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5rem;
+
+  /* Space, in 4px steps. */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.25rem;
+
+  /* Keys never shrink below 44px, the touch target minimum. */
+  --key-height: clamp(44px, 7vh, 56px);
+  --keypad-gap: var(--space-2);
+
+  --color-bg: #eef1f6;
+  --color-surface: #ffffff;
+  --color-border: #c3ccda;
+  --color-text: #172033;
+  --color-text-muted: #4b5668;
+  --color-focus: #1d5bbf;
+  --shadow: 0 1px 2px rgb(23 32 51 / 8%), 0 8px 24px rgb(23 32 51 / 8%);
+
+  --color-display-bg: #f1f4f9;
+  --color-danger-text: #a3171e;
+  --color-danger-border: #d9747a;
+
+  --key-digit-bg: #f1f4f9;
+  --key-digit-text: #172033;
+  --key-function-bg: #e1e7f0;
+  --key-function-text: #25324a;
+  --key-memory-bg: #ffffff;
+  --key-memory-text: #4b5668;
+  --key-memory-border: #c3ccda;
+  --key-operator-bg: #d3e1f6;
+  --key-operator-text: #0d3875;
+  --key-equals-bg: #1d5bbf;
+  --key-equals-text: #ffffff;
+
+  --hover-filter: brightness(0.95);
+  --active-filter: brightness(0.9);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0e131b;
+    --color-surface: #161d28;
+    --color-border: #38455a;
+    --color-text: #e8edf5;
+    --color-text-muted: #a3afc2;
+    --color-focus: #8ab8ff;
+    --shadow: 0 1px 2px rgb(0 0 0 / 40%), 0 8px 24px rgb(0 0 0 / 35%);
+
+    --color-display-bg: #0c1017;
+    --color-danger-text: #ffb4b4;
+    --color-danger-border: #b4575d;
+
+    --key-digit-bg: #263243;
+    --key-digit-text: #e8edf5;
+    --key-function-bg: #313f54;
+    --key-function-text: #e1e8f2;
+    --key-memory-bg: #161d28;
+    --key-memory-text: #a3afc2;
+    --key-memory-border: #38455a;
+    --key-operator-bg: #214273;
+    --key-operator-text: #dbe9ff;
+    --key-equals-bg: #6aa6ff;
+    --key-equals-text: #08111f;
+
+    --hover-filter: brightness(1.12);
+    --active-filter: brightness(1.25);
+  }
+}
