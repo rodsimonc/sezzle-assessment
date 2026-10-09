@@ -1,0 +1,45 @@
+# The build needs the root package files, frontend/, backend/ and evals/package.json.
+# Everything else stays out of the context, so the build is small and the cache stays warm.
+
+# Dependencies and build output (the image rebuilds all of it)
+**/node_modules
+frontend/dist
+backend/bin
+*.exe
+
+# Test and coverage output
+**/coverage
+**/test-results
+**/playwright-report
+**/blob-report
+evals/.tmp
+docs/coverage
+
+# Evals: only the manifest is needed, because the lockfile covers every workspace
+evals/*
+!evals/package.json
+
+# Repository and tooling files the build never reads
+.git
+.github
+.vscode
+.idea
+docs
+releases
+scripts
+*.md
+postman_collection.json
+requests.http
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Local environment files
+.env
+.env.*
+
+# Editor and OS leftovers
+*.log
+*.tsbuildinfo
+.DS_Store
+Thumbs.db

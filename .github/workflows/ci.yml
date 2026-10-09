@@ -1,0 +1,251 @@
+# Continuous integration for the calculator.
+#
+# The evals job is the merge gate. Mark it as a required status check in branch protection.
+# Mark backend, frontend, docs and docker as required too: GitHub counts a skipped job as passed,
+# and evals is skipped when backend or frontend fails.
+# Check names equal the job ids below, so the names to pick are backend, frontend, docs, evals and docker.
+#
+# Action versions are exact release tags, looked up with `gh api repos/<owner>/<repo>/releases/latest`
+# on 2026-10-09:
+#   actions/checkout        v7.0.1
+#   actions/setup-go        v7.0.0
+#   actions/setup-node      v7.1.0
+#   actions/upload-artifact v7.0.2
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  GO_VERSION: "1.27.0"
+  NODE_VERSION: "22.23.2"
+  # Root tooling for diagrams pulls a full Chrome. No job here needs it.
+  PUPPETEER_SKIP_DOWNLOAD: "1"
+
+jobs:
+  backend:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - uses: actions/setup-go@v7.0.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          # The module has no dependencies and no go.sum, so there is nothing to restore.
+          cache: false
+
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Check formatting
+        run: |
+          unformatted="$(gofmt -l backend)"
+          if [ -n "$unformatted" ]; then
+            echo "gofmt would change these files:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: Vet
+        run: go -C backend vet ./...
+
+      - name: Lint
+        run: go -C backend run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.14.0 run ./...
+
+      - name: Test with the coverage gate
+        run: npm run coverage:backend
+
+      - name: Scan for known vulnerabilities
+        run: go -C backend run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...
+
+      - uses: actions/upload-artifact@v7.0.2
+        if: ${{ !cancelled() }}
+        with:
+          name: coverage-backend
+          path: docs/coverage/backend
+          if-no-files-found: warn
+
+  frontend:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint:frontend
+
+      - name: Test with the coverage gate
+        run: npm run coverage:frontend
+
+      - name: Build
+        run: npm run build:frontend
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+
+      - uses: actions/upload-artifact@v7.0.2
+        if: ${{ !cancelled() }}
+        with:
+          name: coverage-frontend
+          path: docs/coverage/frontend
+          if-no-files-found: warn
+
+  docs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check writing style and links
+        run: npm run lint:docs
+
+      - name: Test the helper scripts
+        run: npm run test:scripts
+
+  evals:
+    needs: [backend, frontend]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - uses: actions/setup-go@v7.0.0
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: false
+
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium for the UI evals
+        run: npx playwright install --with-deps chromium
+
+      # `npm run evals` builds frontend/dist and backend/bin/server first, then runs the API and UI evals.
+      - name: Run the evals
+        run: npm run evals
+
+      - name: Check that every requirement has an eval
+        run: npm run evals:coverage
+
+      - name: Run the mutation audit
+        run: npm run evals:audit
+
+      - uses: actions/upload-artifact@v7.0.2
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: evals/playwright-report
+          if-no-files-found: warn
+
+      - uses: actions/upload-artifact@v7.0.2
+        if: ${{ failure() }}
+        with:
+          name: playwright-test-results
+          path: evals/test-results
+          if-no-files-found: ignore
+
+  docker:
+    needs: [backend, frontend]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install the eval dependencies
+        run: npm ci --workspace=evals
+
+      - name: Validate the compose file
+        run: docker compose config -q
+
+      - name: Build the image
+        run: docker build -t calculator:1.0.0 .
+
+      - name: Check the image size and user
+        run: |
+          size="$(docker image inspect calculator:1.0.0 --format '{{.Size}}')"
+          user="$(docker image inspect calculator:1.0.0 --format '{{.Config.User}}')"
+          echo "Image size: ${size} bytes. User: ${user}."
+          test "$size" -lt 41943040
+          test "$user" = "65532:65532"
+
+      # The same hardening as docker-compose.yml. The limiter is off so the evals can send many requests.
+      - name: Start the container
+        run: |
+          docker run -d --name calculator -p 8080:8080 \
+            --read-only --cap-drop ALL --security-opt no-new-privileges:true \
+            -e RATE_LIMIT_PER_MINUTE=0 \
+            calculator:1.0.0
+
+      - name: Wait until the container is healthy
+        run: |
+          for attempt in $(seq 1 30); do
+            status="$(docker inspect --format '{{.State.Health.Status}}' calculator)"
+            echo "Attempt ${attempt}: ${status}"
+            if [ "$status" = "healthy" ]; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs calculator
+          exit 1
+
+      - name: Run the API evals against the container
+        env:
+          EVAL_BASE_URL: http://127.0.0.1:8080
+        run: npm run evals:api
+
+      - name: Stop the container with SIGTERM
+        run: |
+          docker stop --time 10 calculator
+          code="$(docker inspect --format '{{.State.ExitCode}}' calculator)"
+          echo "Exit code: ${code}"
+          test "$code" = "0"
+
+      - name: Show the container logs
+        if: ${{ failure() }}
+        run: docker logs calculator || true
+
+      - uses: actions/upload-artifact@v7.0.2
+        if: ${{ failure() }}
+        with:
+          name: docker-playwright-report
+          path: evals/playwright-report
+          if-no-files-found: ignore
