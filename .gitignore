@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Build output
+frontend/dist/
+backend/bin/
+*.exe
+
+# Test and coverage output (the committed snapshot lives in docs/coverage/)
+backend/coverage.out
+backend/coverage/
+frontend/coverage/
+evals/test-results/
+evals/playwright-report/
+evals/blob-report/
+evals/.tmp/
+test-results/
+playwright-report/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# TypeScript build info
+*.tsbuildinfo

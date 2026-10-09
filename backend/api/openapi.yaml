@@ -1,0 +1,555 @@
+openapi: 3.0.3
+info:
+  title: Calculator API
+  version: 1.0.0
+  description: |
+    Stateless arithmetic service. Send an operation and its operands, get a result.
+
+    Rules that apply to every endpoint:
+
+    - Numbers are IEEE 754 doubles. Results are rounded to 15 significant digits, so `0.1 + 0.2` returns `0.3`.
+    - Errors use Problem Details (RFC 7807) with `application/problem+json`. Shape errors return 400. Business-rule errors return 422.
+    - Every response carries an `X-Request-Id` header. Error bodies repeat it as `requestId`.
+    - Names of operations are lowercase and case-sensitive.
+
+    Request examples and response examples that share a name belong together. The eval suite posts each request example and compares the answer with the response example of the same name.
+  license:
+    name: MIT
+servers:
+  - url: http://localhost:8080
+    description: Local backend or the Docker container
+tags:
+  - name: Calculations
+  - name: Operations
+  - name: Meta
+paths:
+  /api/v1/calculations:
+    post:
+      tags: [Calculations]
+      operationId: createCalculation
+      summary: Run one operation
+      description: |
+        Validates the request, runs the operation and returns the result. Nothing is stored.
+
+        Validation order: media type (415), body size (413), JSON syntax (400), request shape (400), operation name (422), operand count (400), arithmetic rules (422).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CalculationRequest'
+            examples:
+              add:
+                summary: Add two numbers
+                value: { operation: add, operands: [2, 3] }
+              subtract:
+                value: { operation: subtract, operands: [10, 4] }
+              multiply:
+                value: { operation: multiply, operands: [6, 7] }
+              divide:
+                value: { operation: divide, operands: [10, 4] }
+              power:
+                value: { operation: power, operands: [2, 10] }
+              sqrt:
+                value: { operation: sqrt, operands: [9] }
+              percentage:
+                summary: 15 percent of 200
+                value: { operation: percentage, operands: [15, 200] }
+              reciprocal:
+                value: { operation: reciprocal, operands: [4] }
+              square:
+                value: { operation: square, operands: [-3] }
+              rounding:
+                summary: Float noise is rounded away
+                value: { operation: add, operands: [0.1, 0.2] }
+              divide_by_zero:
+                value: { operation: divide, operands: [5, 0] }
+              sqrt_negative:
+                value: { operation: sqrt, operands: [-4] }
+              power_undefined:
+                value: { operation: power, operands: [-8, 0.5] }
+              result_out_of_range:
+                value: { operation: multiply, operands: [1.0e+308, 10] }
+              unknown_operation:
+                value: { operation: modulo, operands: [7, 3] }
+              wrong_operand_count:
+                value: { operation: add, operands: [1] }
+              missing_operation:
+                value: { operands: [1, 2] }
+              non_numeric_operand:
+                value: { operation: add, operands: [1, '2'] }
+      responses:
+        '200':
+          description: The operation ran.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalculationResponse'
+              examples:
+                add:
+                  value: { operation: add, operands: [2, 3], result: 5 }
+                subtract:
+                  value: { operation: subtract, operands: [10, 4], result: 6 }
+                multiply:
+                  value: { operation: multiply, operands: [6, 7], result: 42 }
+                divide:
+                  value: { operation: divide, operands: [10, 4], result: 2.5 }
+                power:
+                  value: { operation: power, operands: [2, 10], result: 1024 }
+                sqrt:
+                  value: { operation: sqrt, operands: [9], result: 3 }
+                percentage:
+                  value: { operation: percentage, operands: [15, 200], result: 30 }
+                reciprocal:
+                  value: { operation: reciprocal, operands: [4], result: 0.25 }
+                square:
+                  value: { operation: square, operands: [-3], result: 9 }
+                rounding:
+                  value: { operation: add, operands: [0.1, 0.2], result: 0.3 }
+        '400':
+          description: The request is malformed. Fix the request and send it again.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                wrong_operand_count:
+                  value:
+                    type: about:blank
+                    title: Bad Request
+                    status: 400
+                    detail: The request has the wrong number of operands.
+                    instance: /api/v1/calculations
+                    code: INVALID_OPERAND_COUNT
+                    requestId: 3f9c2b7a1d4e8f60a5b2c9d1e7f3a408
+                    errors:
+                      - { field: operands, message: 'add needs 2 operands, got 1.' }
+                missing_operation:
+                  value:
+                    type: about:blank
+                    title: Bad Request
+                    status: 400
+                    detail: The request body is invalid.
+                    instance: /api/v1/calculations
+                    code: INVALID_REQUEST
+                    requestId: 3f9c2b7a1d4e8f60a5b2c9d1e7f3a408
+                    errors:
+                      - { field: operation, message: is required. }
+                non_numeric_operand:
+                  value:
+                    type: about:blank
+                    title: Bad Request
+                    status: 400
+                    detail: The request body is invalid.
+                    instance: /api/v1/calculations
+                    code: INVALID_REQUEST
+                    requestId: 3f9c2b7a1d4e8f60a5b2c9d1e7f3a408
+                    errors:
+                      - { field: operands, message: must be an array of numbers. }
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          description: The request is well formed but the operation can't be carried out.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                divide_by_zero:
+                  value:
+                    type: about:blank
+                    title: Unprocessable Entity
+                    status: 422
+                    detail: Division by zero is undefined.
+                    instance: /api/v1/calculations
+                    code: DIVISION_BY_ZERO
+                    requestId: 3f9c2b7a1d4e8f60a5b2c9d1e7f3a408
+                sqrt_negative:
+                  value:
+                    type: about:blank
+                    title: Unprocessable Entity
+                    status: 422
+                    detail: The square root of a negative number isn't a real number.
+                    instance: /api/v1/calculations
+                    code: NEGATIVE_SQUARE_ROOT
+                    requestId: 3f9c2b7a1d4e8f60a5b2c9d1e7f3a408
+                power_undefined:
+                  value:
+                    type: about:blank
+                    title: Unprocessable Entity
+                    status: 422
+                    detail: The result isn't a real number.
+                    instance: /api/v1/calculations
+                    code: UNDEFINED_RESULT
+                    requestId: 3f9c2b7a1d4e8f60a5b2c9d1e7f3a408
+                result_out_of_range:
+                  value:
+                    type: about:blank
+                    title: Unprocessable Entity
+                    status: 422
+                    detail: The result is too large to represent.
+                    instance: /api/v1/calculations
+                    code: RESULT_OUT_OF_RANGE
+                    requestId: 3f9c2b7a1d4e8f60a5b2c9d1e7f3a408
+                unknown_operation:
+                  value:
+                    type: about:blank
+                    title: Unprocessable Entity
+                    status: 422
+                    detail: Unknown operation "modulo".
+                    instance: /api/v1/calculations
+                    code: UNKNOWN_OPERATION
+                    requestId: 3f9c2b7a1d4e8f60a5b2c9d1e7f3a408
+                    errors:
+                      - field: operation
+                        message: 'must be one of: add, subtract, multiply, divide, power, sqrt, percentage, reciprocal, square.'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/v1/operations:
+    get:
+      tags: [Operations]
+      operationId: listOperations
+      summary: List supported operations
+      description: Returns the catalogue in a fixed order. The frontend and the docs read it.
+      responses:
+        '200':
+          description: The catalogue.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationList'
+              examples:
+                catalogue:
+                  value:
+                    items:
+                      - { name: add, symbol: '+', arity: 2, description: Adds two numbers. }
+                      - { name: subtract, symbol: '-', arity: 2, description: Subtracts the second number from the first. }
+                      - { name: multiply, symbol: '*', arity: 2, description: Multiplies two numbers. }
+                      - { name: divide, symbol: '/', arity: 2, description: Divides the first number by the second. }
+                      - { name: power, symbol: '^', arity: 2, description: Raises the first number to the power of the second. }
+                      - { name: sqrt, symbol: sqrt, arity: 1, description: Returns the square root of a non-negative number. }
+                      - { name: percentage, symbol: '%', arity: 2, description: Returns the first number percent of the second. }
+                      - { name: reciprocal, symbol: 1/x, arity: 1, description: Returns 1 divided by the number. }
+                      - { name: square, symbol: x^2, arity: 1, description: Multiplies the number by itself. }
+                    total: 9
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/v1/operations/{name}:
+    post:
+      tags: [Operations]
+      operationId: runOperation
+      summary: Run one operation by name
+      description: |
+        Same behaviour and same response as `POST /api/v1/calculations`. The operation comes from the path, so the body holds only the operands.
+
+        An unknown name is a missing resource and returns 404.
+      parameters:
+        - name: name
+          in: path
+          required: true
+          description: Operation name, lowercase.
+          schema:
+            $ref: '#/components/schemas/OperationName'
+          examples:
+            add:
+              value: add
+            divide:
+              value: divide
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OperandsRequest'
+            examples:
+              add:
+                value: { operands: [2, 3] }
+              divide:
+                value: { operands: [10, 4] }
+      responses:
+        '200':
+          description: The operation ran.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalculationResponse'
+              examples:
+                add:
+                  value: { operation: add, operands: [2, 3], result: 5 }
+                divide:
+                  value: { operation: divide, operands: [10, 4], result: 2.5 }
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: No operation has that name.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/RequestId'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                unknown_operation:
+                  value:
+                    type: about:blank
+                    title: Not Found
+                    status: 404
+                    detail: Unknown operation "modulo".
+                    instance: /api/v1/operations/modulo
+                    code: UNKNOWN_OPERATION
+                    requestId: 3f9c2b7a1d4e8f60a5b2c9d1e7f3a408
+        '413':
+          $ref: '#/components/responses/PayloadTooLarge'
+        '415':
+          $ref: '#/components/responses/UnsupportedMediaType'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /api/v1/openapi.yaml:
+    get:
+      tags: [Meta]
+      operationId: getOpenApi
+      summary: This document
+      description: Serves the exact file the backend was built with.
+      responses:
+        '200':
+          description: The OpenAPI document.
+          content:
+            application/yaml:
+              schema:
+                type: string
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /healthz:
+    get:
+      tags: [Meta]
+      operationId: getHealth
+      summary: Liveness check
+      description: Not versioned and not rate limited. Docker and load balancers call it.
+      responses:
+        '200':
+          description: The service is up.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+              examples:
+                ok:
+                  value: { status: ok, version: 1.0.0 }
+components:
+  headers:
+    RequestId:
+      description: Identifier for this request. A valid incoming `X-Request-Id` is echoed. Otherwise the server generates 32 hex characters.
+      schema:
+        type: string
+        pattern: '^[A-Za-z0-9._-]{1,64}$'
+    RetryAfter:
+      description: Whole seconds to wait before trying again.
+      schema:
+        type: integer
+        minimum: 1
+  schemas:
+    OperationName:
+      type: string
+      enum: [add, subtract, multiply, divide, power, sqrt, percentage, reciprocal, square]
+    CalculationRequest:
+      type: object
+      additionalProperties: false
+      required: [operation, operands]
+      properties:
+        operation:
+          $ref: '#/components/schemas/OperationName'
+        operands:
+          $ref: '#/components/schemas/Operands'
+    OperandsRequest:
+      type: object
+      additionalProperties: false
+      required: [operands]
+      properties:
+        operands:
+          $ref: '#/components/schemas/Operands'
+    Operands:
+      type: array
+      description: One number for sqrt, reciprocal and square. Two numbers for everything else.
+      minItems: 1
+      maxItems: 2
+      items:
+        type: number
+        format: double
+    CalculationResponse:
+      type: object
+      required: [operation, operands, result]
+      properties:
+        operation:
+          $ref: '#/components/schemas/OperationName'
+        operands:
+          $ref: '#/components/schemas/Operands'
+        result:
+          type: number
+          format: double
+    OperationDescriptor:
+      type: object
+      required: [name, symbol, arity, description]
+      properties:
+        name:
+          $ref: '#/components/schemas/OperationName'
+        symbol:
+          type: string
+        arity:
+          type: integer
+          enum: [1, 2]
+        description:
+          type: string
+    OperationList:
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OperationDescriptor'
+        total:
+          type: integer
+    Health:
+      type: object
+      required: [status, version]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+        version:
+          type: string
+    FieldError:
+      type: object
+      required: [field, message]
+      properties:
+        field:
+          type: string
+        message:
+          type: string
+    Problem:
+      type: object
+      description: RFC 7807 Problem Details plus `code`, `requestId`, `errors` and `retryAfter`.
+      required: [type, title, status, detail, instance, code, requestId]
+      properties:
+        type:
+          type: string
+          example: about:blank
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        instance:
+          type: string
+        code:
+          type: string
+          description: Stable machine-readable code. The full list lives in docs/ERROR-CONTRACT.md.
+          enum:
+            - INVALID_JSON
+            - INVALID_REQUEST
+            - INVALID_OPERAND_COUNT
+            - UNKNOWN_OPERATION
+            - DIVISION_BY_ZERO
+            - NEGATIVE_SQUARE_ROOT
+            - UNDEFINED_RESULT
+            - RESULT_OUT_OF_RANGE
+            - NOT_FOUND
+            - METHOD_NOT_ALLOWED
+            - PAYLOAD_TOO_LARGE
+            - UNSUPPORTED_MEDIA_TYPE
+            - CORS_ORIGIN_NOT_ALLOWED
+            - RATE_LIMITED
+            - INTERNAL_ERROR
+        requestId:
+          type: string
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldError'
+        retryAfter:
+          type: integer
+          minimum: 1
+  responses:
+    BadRequest:
+      description: The request is malformed.
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unprocessable:
+      description: The request is well formed but the operation can't be carried out.
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    PayloadTooLarge:
+      description: The body is larger than 4096 bytes.
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    UnsupportedMediaType:
+      description: "`Content-Type` isn't `application/json`."
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    TooManyRequests:
+      description: The client went over the rate limit.
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    InternalError:
+      description: Unexpected failure. The body never leaks internals.
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
