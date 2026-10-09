@@ -21,7 +21,7 @@ func TestLoadDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Port != 8080 || cfg.StaticDir != "" || len(cfg.CORSAllowedOrigins) != 0 || cfg.RateLimitPerMinute != 120 ||
+	if cfg.Host != "127.0.0.1" || cfg.Port != 8080 || cfg.StaticDir != "" || len(cfg.CORSAllowedOrigins) != 0 || cfg.RateLimitPerMinute != 120 ||
 		cfg.RateLimitBurst != 30 || cfg.TrustProxy || cfg.LogLevel != slog.LevelInfo || cfg.LogFormat != "json" ||
 		cfg.ShutdownTimeout != 10*time.Second {
 		t.Fatalf("defaults = %+v", cfg)
@@ -47,6 +47,15 @@ func TestLoadValues(t *testing.T) {
 	}
 }
 
+func TestLoadListenHost(t *testing.T) {
+	for _, in := range []string{"0.0.0.0", "::", "::1", "127.0.0.1", "192.168.1.5", "localhost", " 0.0.0.0 "} {
+		cfg, err := Load(env("LISTEN_HOST", in))
+		if err != nil || cfg.Host != strings.TrimSpace(in) {
+			t.Errorf("LISTEN_HOST=%q -> %q, %v", in, cfg.Host, err)
+		}
+	}
+}
+
 func TestLoadLogLevels(t *testing.T) {
 	for in, want := range map[string]slog.Level{"debug": slog.LevelDebug, "info": slog.LevelInfo, "warn": slog.LevelWarn, "error": slog.LevelError, "WARN": slog.LevelWarn} {
 		cfg, err := Load(env("LOG_LEVEL", in))
@@ -58,6 +67,7 @@ func TestLoadLogLevels(t *testing.T) {
 
 func TestLoadRejectsBadValuesAndNamesTheVariable(t *testing.T) {
 	tests := []struct{ name, value string }{
+		{"LISTEN_HOST", "example.com"}, {"LISTEN_HOST", "0.0.0.0:8080"}, {"LISTEN_HOST", "*"},
 		{"PORT", "abc"}, {"PORT", "0"}, {"PORT", "70000"}, {"PORT", "-1"}, {"PORT", "80.5"},
 		{"RATE_LIMIT_PER_MINUTE", "-1"}, {"RATE_LIMIT_PER_MINUTE", "fast"},
 		{"RATE_LIMIT_BURST", "0"}, {"RATE_LIMIT_BURST", "x"},

@@ -147,9 +147,14 @@ func TestStaticNeverEscapesTheDirectory(t *testing.T) {
 		if strings.Contains(rec.Body.String(), "TOP-SECRET") || strings.Contains(rec.Body.String(), "root:") {
 			t.Errorf("%s leaked file contents", attack)
 		}
-		if rec.Code >= 500 {
-			t.Errorf("%s -> %d", attack, rec.Code)
+		if rec.Code != http.StatusOK && rec.Code != http.StatusBadRequest && rec.Code != http.StatusNotFound {
+			t.Errorf("%s -> %d, want 200, 400 or 404", attack, rec.Code)
 		}
+	}
+	asProblem(t, httptestRecord(h, mustRequest(t, http.MethodGet, "/api/v1/../healthz")), 404, "NOT_FOUND")
+	asProblem(t, httptestRecord(h, mustRequest(t, http.MethodGet, "/api//v1/operations")), 404, "NOT_FOUND")
+	if rec := httptestRecord(h, mustRequest(t, http.MethodGet, "//assets//x")); rec.Code != http.StatusNotFound {
+		t.Errorf("//assets//x -> %d, want 404", rec.Code)
 	}
 }
 
@@ -243,7 +248,7 @@ func TestServeReturnsTheListenerFailure(t *testing.T) {
 }
 
 func TestRunFailsWhenThePortIsTaken(t *testing.T) {
-	ln, err := listen(":0")
+	ln, err := listen("127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -264,6 +269,7 @@ func TestRunServesAndStops(t *testing.T) {
 		t.Fatal(err)
 	}
 	cfg := testConfig()
+	cfg.Host = "127.0.0.1"
 	cfg.Port = port
 	ctx, cancel := context.WithCancel(t.Context())
 	done := make(chan error, 1)

@@ -4,6 +4,7 @@ package config
 import (
 	"fmt"
 	"log/slog"
+	"net"
 	"net/url"
 	"strconv"
 	"strings"
@@ -12,6 +13,7 @@ import (
 
 // Config holds the validated settings.
 type Config struct {
+	Host               string
 	Port               int
 	StaticDir          string
 	CORSAllowedOrigins []string
@@ -30,6 +32,9 @@ func Load(getenv func(string) string) (Config, error) {
 		StaticDir: getenv("STATIC_DIR"),
 	}
 	var err error
+	if cfg.Host, err = hostVar(getenv, "LISTEN_HOST"); err != nil {
+		return Config{}, err
+	}
 	if cfg.Port, err = intVar(getenv, "PORT", 8080, 1, 65535); err != nil {
 		return Config{}, err
 	}
@@ -58,6 +63,19 @@ func Load(getenv func(string) string) (Config, error) {
 		return Config{}, err
 	}
 	return cfg, nil
+}
+
+// hostVar returns the address to listen on. Loopback is the default, so a local run never opens the
+// machine to the network (and never triggers a firewall prompt). Docker sets 0.0.0.0.
+func hostVar(getenv func(string) string, name string) (string, error) {
+	raw := strings.TrimSpace(getenv(name))
+	if raw == "" {
+		return "127.0.0.1", nil
+	}
+	if raw == "localhost" || net.ParseIP(raw) != nil {
+		return raw, nil
+	}
+	return "", fmt.Errorf("%s must be an IP address such as 127.0.0.1 or 0.0.0.0, got %q", name, raw)
 }
 
 func intVar(getenv func(string) string, name string, def, lo, hi int) (int, error) {

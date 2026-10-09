@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -45,7 +46,7 @@ func runContext(ctx context.Context, args []string, getenv func(string) string, 
 	}
 
 	if *healthcheck {
-		if err := probe(ctx, "http://127.0.0.1:"+strconv.Itoa(cfg.Port)+"/healthz"); err != nil {
+		if err := probe(ctx, healthURL(cfg)); err != nil {
 			_, _ = fmt.Fprintf(stderr, "healthcheck failed: %v\n", err)
 			return 1
 		}
@@ -67,6 +68,16 @@ func newLogger(w io.Writer, cfg config.Config) *slog.Logger {
 		return slog.New(slog.NewTextHandler(w, opts))
 	}
 	return slog.New(slog.NewJSONHandler(w, opts))
+}
+
+// healthURL is where the running service answers /healthz. A wildcard listen address such as 0.0.0.0
+// is reached through loopback, because the probe runs inside the same container or host.
+func healthURL(cfg config.Config) string {
+	host := cfg.Host
+	if ip := net.ParseIP(host); host == "" || (ip != nil && ip.IsUnspecified()) {
+		host = "127.0.0.1"
+	}
+	return "http://" + net.JoinHostPort(host, strconv.Itoa(cfg.Port)) + "/healthz"
 }
 
 // probe sends GET to url with a 3 second limit and wants a 200.

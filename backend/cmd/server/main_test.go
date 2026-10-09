@@ -161,8 +161,29 @@ func TestServesUntilCancelled(t *testing.T) {
 	}
 }
 
+func TestHealthURL(t *testing.T) {
+	tests := []struct {
+		host string
+		port int
+		want string
+	}{
+		{"", 8080, "http://127.0.0.1:8080/healthz"},
+		{"0.0.0.0", 8080, "http://127.0.0.1:8080/healthz"},
+		{"::", 9000, "http://127.0.0.1:9000/healthz"},
+		{"127.0.0.1", 8080, "http://127.0.0.1:8080/healthz"},
+		{"::1", 8080, "http://[::1]:8080/healthz"},
+		{"192.168.1.5", 3000, "http://192.168.1.5:3000/healthz"},
+		{"localhost", 8080, "http://localhost:8080/healthz"},
+	}
+	for _, tt := range tests {
+		if got := healthURL(config.Config{Host: tt.host, Port: tt.port}); got != tt.want {
+			t.Errorf("healthURL(%q, %d) = %q, want %q", tt.host, tt.port, got, tt.want)
+		}
+	}
+}
+
 func TestStartFailsWhenThePortIsTaken(t *testing.T) {
-	ln, err := listen(":0")
+	ln, err := listen("127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
 	}

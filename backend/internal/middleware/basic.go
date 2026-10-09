@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
+	"io"
 	"log/slog"
 	"net/http"
 	"regexp"
@@ -90,10 +91,17 @@ func SecurityHeaders(next http.Handler) http.Handler {
 func BodyLimit(limit int64) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if IsAPIPath(r.URL.Path) {
-				r.Body = http.MaxBytesReader(w, r.Body, limit)
+			if !IsAPIPath(r.URL.Path) {
+				next.ServeHTTP(w, r)
+				return
 			}
+			limited := http.MaxBytesReader(w, r.Body, limit)
+			r.Body = limited
 			next.ServeHTTP(w, r)
+			// net/http drains an unread body itself, but only when it owns the reader. A handler that
+			// answers 415 or 405 early would leave the bytes unread, and closing the socket on unread
+			// bytes makes Windows reset the connection before the client reads the response.
+			_, _ = io.Copy(io.Discard, limited)
 		})
 	}
 }

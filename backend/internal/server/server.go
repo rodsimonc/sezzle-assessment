@@ -9,7 +9,9 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path"
 	"strconv"
+	"strings"
 	"time"
 
 	"calculator/api"
@@ -40,8 +42,36 @@ func routes(cfg config.Config, logger *slog.Logger) http.Handler {
 	mux.HandleFunc("/healthz", h.Health)
 	mux.HandleFunc("/api", handler.NotFound)
 	mux.HandleFunc("/api/", handler.NotFound)
-	mux.Handle("/", newStatic(cfg.StaticDir, logger))
-	return mux
+	static := newStatic(cfg.StaticDir, logger)
+	mux.Handle("/", static)
+	return withoutRedirects(mux, static)
+}
+
+// withoutRedirects answers paths with dot segments or doubled slashes itself. ServeMux would send
+// those a 307 to the cleaned path. The static handler cleans the path on its own and never leaves
+// the site directory, and an API path like that is a plain 404.
+func withoutRedirects(mux, static http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		p := r.URL.Path
+		if p == "" || r.Method == http.MethodConnect || cleanPath(p) == p {
+			mux.ServeHTTP(w, r)
+			return
+		}
+		if p == "/api" || strings.HasPrefix(p, "/api/") {
+			handler.NotFound(w, r)
+			return
+		}
+		static.ServeHTTP(w, r)
+	})
+}
+
+// cleanPath mirrors how ServeMux cleans a path: path.Clean plus the trailing slash.
+func cleanPath(p string) string {
+	cleaned := path.Clean(p)
+	if p[len(p)-1] == '/' && cleaned != "/" {
+		cleaned += "/"
+	}
+	return cleaned
 }
 
 // withMiddleware wraps next in the fixed chain. Outermost first: RequestID, Recover, SecurityHeaders,
@@ -63,10 +93,15 @@ func withMiddleware(ctx context.Context, next http.Handler, cfg config.Config, l
 	return middleware.RequestID(chained)
 }
 
-// Run listens on cfg.Port and serves until ctx ends, then shuts down within cfg.ShutdownTimeout.
+// Run listens on cfg.Host and cfg.Port and serves until ctx ends, then shuts down within cfg.ShutdownTimeout.
+// An empty Host means loopback, the same default config.Load applies.
 func Run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
+	host := cfg.Host
+	if host == "" {
+		host = "127.0.0.1"
+	}
 	var lc net.ListenConfig
-	ln, err := lc.Listen(ctx, "tcp", ":"+strconv.Itoa(cfg.Port))
+	ln, err := lc.Listen(ctx, "tcp", net.JoinHostPort(host, strconv.Itoa(cfg.Port)))
 	if err != nil {
 		return fmt.Errorf("listen: %w", err)
 	}

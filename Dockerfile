@@ -50,7 +50,9 @@ WORKDIR /app
 COPY --from=api /out/server /app/server
 COPY --from=web /src/frontend/dist /app/web
 
+# LISTEN_HOST=0.0.0.0 is what makes the published port reachable. Outside a container the default is loopback.
 ENV STATIC_DIR=/app/web \
+    LISTEN_HOST=0.0.0.0 \
     PORT=8080
 EXPOSE 8080
 

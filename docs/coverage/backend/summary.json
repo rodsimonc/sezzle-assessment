@@ -1,0 +1,13 @@
+{
+  "total": 99.3,
+  "packages": {
+    "internal/domain": 100,
+    "internal/problem": 100,
+    "internal/service": 100,
+    "internal/config": 100,
+    "internal/handler": 100,
+    "internal/middleware": 100,
+    "cmd/server": 97.6,
+    "internal/server": 97.2
+  }
+}

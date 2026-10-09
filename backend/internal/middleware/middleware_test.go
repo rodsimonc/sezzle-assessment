@@ -192,6 +192,19 @@ func TestBodyLimit(t *testing.T) {
 	}
 }
 
+func TestBodyLimitDrainsAnUnreadBody(t *testing.T) {
+	var body io.ReadCloser
+	h := BodyLimit(MaxBodyBytes)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body = r.Body
+		w.WriteHeader(http.StatusUnsupportedMediaType)
+	}))
+	req := httptest.NewRequestWithContext(t.Context(), "POST", "/api/v1/calculations", strings.NewReader(strings.Repeat("x", 3000)))
+	h.ServeHTTP(httptest.NewRecorder(), req)
+	if n, err := body.Read(make([]byte, 1)); n != 0 || !errors.Is(err, io.EOF) {
+		t.Errorf("unread body left behind: read %d bytes, err %v", n, err)
+	}
+}
+
 func TestLogging(t *testing.T) {
 	var logs bytes.Buffer
 	logger := slog.New(slog.NewJSONHandler(&logs, nil))

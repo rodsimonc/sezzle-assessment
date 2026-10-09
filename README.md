@@ -173,6 +173,7 @@ The backend reads environment variables. [.env.example](.env.example) lists them
 
 | Variable | Default | Meaning |
 |----------|---------|---------|
+| `LISTEN_HOST` | `127.0.0.1` | Listen address. The Docker image sets `0.0.0.0` |
 | `PORT` | `8080` | Listen port |
 | `STATIC_DIR` | empty | Directory with the built frontend. Empty means API only |
 | `CORS_ALLOWED_ORIGINS` | empty | Comma-separated allowlist. Empty sends no CORS headers |

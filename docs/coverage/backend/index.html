@@ -1,0 +1,1689 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>server: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">calculator/cmd/server/main.go (97.6%)</option>
+				
+				<option value="file1">calculator/internal/config/config.go (100.0%)</option>
+				
+				<option value="file2">calculator/internal/domain/error.go (100.0%)</option>
+				
+				<option value="file3">calculator/internal/domain/operation.go (100.0%)</option>
+				
+				<option value="file4">calculator/internal/handler/decode.go (100.0%)</option>
+				
+				<option value="file5">calculator/internal/handler/handler.go (100.0%)</option>
+				
+				<option value="file6">calculator/internal/middleware/basic.go (100.0%)</option>
+				
+				<option value="file7">calculator/internal/middleware/cors.go (100.0%)</option>
+				
+				<option value="file8">calculator/internal/middleware/logging.go (100.0%)</option>
+				
+				<option value="file9">calculator/internal/middleware/ratelimit.go (100.0%)</option>
+				
+				<option value="file10">calculator/internal/problem/problem.go (100.0%)</option>
+				
+				<option value="file11">calculator/internal/server/server.go (97.2%)</option>
+				
+				<option value="file12">calculator/internal/server/static.go (97.3%)</option>
+				
+				<option value="file13">calculator/internal/service/calculator.go (100.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">no coverage</span>
+				<span class="cov1">low coverage</span>
+				<span class="cov2">*</span>
+				<span class="cov3">*</span>
+				<span class="cov4">*</span>
+				<span class="cov5">*</span>
+				<span class="cov6">*</span>
+				<span class="cov7">*</span>
+				<span class="cov8">*</span>
+				<span class="cov9">*</span>
+				<span class="cov10">high coverage</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">// Command server runs the calculator API and, when STATIC_DIR is set, the built frontend.
+package main
+
+import (
+        "context"
+        "flag"
+        "fmt"
+        "io"
+        "log/slog"
+        "net/http"
+        "os"
+        "os/signal"
+        "strconv"
+        "syscall"
+        "time"
+
+        "calculator/internal/config"
+        "calculator/internal/server"
+        "calculator/internal/version"
+)
+
+func main() {
+        <span class="cov0" title="0">os.Exit(run(os.Args[1:], os.Getenv, os.Stdout, os.Stderr))
+</span>}
+
+// run starts the service and returns the process exit code. SIGINT and SIGTERM end it cleanly.
+func run(args []string, getenv func(string) string, stdout, stderr io.Writer) int {
+        <span class="cov1" title="1">ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+        defer stop()
+        return runContext(ctx, args, getenv, stdout, stderr)
+</span>}
+
+func runContext(ctx context.Context, args []string, getenv func(string) string, stdout, stderr io.Writer) int {
+        <span class="cov10" title="9">flags := flag.NewFlagSet("server", flag.ContinueOnError)
+        flags.SetOutput(stderr)
+        healthcheck := flags.Bool("healthcheck", false, "probe /healthz on 127.0.0.1 and exit 0 when it answers 200")
+        if err := flags.Parse(args); err != nil </span>{
+                <span class="cov1" title="1">return 2
+</span>        }
+
+        <span class="cov9" title="8">cfg, err := config.Load(getenv)
+        if err != nil </span>{
+                <span class="cov3" title="2">_, _ = fmt.Fprintf(stderr, "config error: %v\n", err)
+                return 1
+</span>        }
+
+        <span class="cov8" title="6">if *healthcheck </span>{
+                <span class="cov6" title="4">if err := probe(ctx, "http://127.0.0.1:"+strconv.Itoa(cfg.Port)+"/healthz"); err != nil </span>{
+                        <span class="cov5" title="3">_, _ = fmt.Fprintf(stderr, "healthcheck failed: %v\n", err)
+                        return 1
+</span>                }
+                <span class="cov1" title="1">return 0</span>
+        }
+
+        <span class="cov3" title="2">logger := newLogger(stdout, cfg)
+        logger.Info("starting", "version", version.Version, "port", cfg.Port)
+        if err := server.Run(ctx, cfg, logger); err != nil </span>{
+                <span class="cov1" title="1">logger.Error("server stopped", "error", err)
+                return 1
+</span>        }
+        <span class="cov1" title="1">return 0</span>
+}
+
+func newLogger(w io.Writer, cfg config.Config) *slog.Logger {
+        <span class="cov7" title="5">opts := &amp;slog.HandlerOptions{Level: cfg.LogLevel}
+        if cfg.LogFormat == "text" </span>{
+                <span class="cov3" title="2">return slog.New(slog.NewTextHandler(w, opts))
+</span>        }
+        <span class="cov5" title="3">return slog.New(slog.NewJSONHandler(w, opts))</span>
+}
+
+// probe sends GET to url with a 3 second limit and wants a 200.
+func probe(ctx context.Context, url string) error {
+        <span class="cov7" title="5">ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+        defer cancel()
+        req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
+        if err != nil </span>{
+                <span class="cov1" title="1">return err
+</span>        }
+        <span class="cov6" title="4">resp, err := http.DefaultClient.Do(req)
+        if err != nil </span>{
+                <span class="cov3" title="2">return err
+</span>        }
+        <span class="cov3" title="2">defer func() </span>{ <span class="cov3" title="2">_ = resp.Body.Close() }</span>()
+        <span class="cov3" title="2">if resp.StatusCode != http.StatusOK </span>{
+                <span class="cov1" title="1">return fmt.Errorf("status %d", resp.StatusCode)
+</span>        }
+        <span class="cov1" title="1">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">// Package config reads and validates the environment variables the service understands.
+package config
+
+import (
+        "fmt"
+        "log/slog"
+        "net/url"
+        "strconv"
+        "strings"
+        "time"
+)
+
+// Config holds the validated settings.
+type Config struct {
+        Port               int
+        StaticDir          string
+        CORSAllowedOrigins []string
+        RateLimitPerMinute int
+        RateLimitBurst     int
+        TrustProxy         bool
+        LogLevel           slog.Level
+        LogFormat          string
+        ShutdownTimeout    time.Duration
+}
+
+// Load reads the settings through getenv. An unset or empty variable takes its default.
+// A bad value returns an error that names the variable.
+func Load(getenv func(string) string) (Config, error) {
+        <span class="cov7" title="31">cfg := Config{
+                StaticDir: getenv("STATIC_DIR"),
+</span>        }
+        <span class="cov7" title="31">var err error
+        if cfg.Port, err = intVar(getenv, "PORT", 8080, 1, 65535); err != nil </span>{
+                <span class="cov4" title="5">return Config{}, err
+</span>        }
+        <span class="cov7" title="26">if cfg.RateLimitPerMinute, err = intVar(getenv, "RATE_LIMIT_PER_MINUTE", 120, 0, 1_000_000); err != nil </span>{
+                <span class="cov2" title="2">return Config{}, err
+</span>        }
+        <span class="cov7" title="24">if cfg.RateLimitBurst, err = intVar(getenv, "RATE_LIMIT_BURST", 30, 1, 1_000_000); err != nil </span>{
+                <span class="cov2" title="2">return Config{}, err
+</span>        }
+        <span class="cov7" title="22">seconds, err := intVar(getenv, "SHUTDOWN_TIMEOUT_SECONDS", 10, 1, 3600)
+        if err != nil </span>{
+                <span class="cov2" title="2">return Config{}, err
+</span>        }
+        <span class="cov6" title="20">cfg.ShutdownTimeout = time.Duration(seconds) * time.Second
+</span>
+        <span class="cov6" title="20">if cfg.TrustProxy, err = boolVar(getenv, "TRUST_PROXY", false); err != nil </span>{
+                <span class="cov1" title="1">return Config{}, err
+</span>        }
+        <span class="cov6" title="19">if cfg.LogLevel, err = levelVar(getenv, "LOG_LEVEL"); err != nil </span>{
+                <span class="cov1" title="1">return Config{}, err
+</span>        }
+        <span class="cov6" title="18">if cfg.LogFormat, err = formatVar(getenv, "LOG_FORMAT"); err != nil </span>{
+                <span class="cov1" title="1">return Config{}, err
+</span>        }
+        <span class="cov6" title="17">if cfg.CORSAllowedOrigins, err = originsVar(getenv, "CORS_ALLOWED_ORIGINS"); err != nil </span>{
+                <span class="cov5" title="9">return Config{}, err
+</span>        }
+        <span class="cov5" title="8">return cfg, nil</span>
+}
+
+func intVar(getenv func(string) string, name string, def, lo, hi int) (int, error) {
+        <span class="cov10" title="103">raw := strings.TrimSpace(getenv(name))
+        if raw == "" </span>{
+                <span class="cov9" title="88">return def, nil
+</span>        }
+        <span class="cov6" title="15">n, err := strconv.Atoi(raw)
+        if err != nil || n &lt; lo || n &gt; hi </span>{
+                <span class="cov5" title="11">return 0, fmt.Errorf("%s must be a whole number from %d to %d, got %q", name, lo, hi, raw)
+</span>        }
+        <span class="cov3" title="4">return n, nil</span>
+}
+
+func boolVar(getenv func(string) string, name string, def bool) (bool, error) {
+        <span class="cov6" title="20">raw := strings.TrimSpace(getenv(name))
+        if raw == "" </span>{
+                <span class="cov6" title="18">return def, nil
+</span>        }
+        <span class="cov2" title="2">b, err := strconv.ParseBool(raw)
+        if err != nil </span>{
+                <span class="cov1" title="1">return false, fmt.Errorf("%s must be true or false, got %q", name, raw)
+</span>        }
+        <span class="cov1" title="1">return b, nil</span>
+}
+
+func levelVar(getenv func(string) string, name string) (slog.Level, error) {
+        <span class="cov6" title="19">raw := strings.ToLower(strings.TrimSpace(getenv(name)))
+        switch raw </span>{
+        case "", "info":
+                <span class="cov5" title="13">return slog.LevelInfo, nil</span>
+        case "debug":
+                <span class="cov2" title="2">return slog.LevelDebug, nil</span>
+        case "warn":
+                <span class="cov2" title="2">return slog.LevelWarn, nil</span>
+        case "error":
+                <span class="cov1" title="1">return slog.LevelError, nil</span>
+        }
+        <span class="cov1" title="1">return 0, fmt.Errorf("%s must be debug, info, warn or error, got %q", name, raw)</span>
+}
+
+func formatVar(getenv func(string) string, name string) (string, error) {
+        <span class="cov6" title="18">raw := strings.ToLower(strings.TrimSpace(getenv(name)))
+        switch raw </span>{
+        case "", "json":
+                <span class="cov6" title="16">return "json", nil</span>
+        case "text":
+                <span class="cov1" title="1">return "text", nil</span>
+        }
+        <span class="cov1" title="1">return "", fmt.Errorf("%s must be json or text, got %q", name, raw)</span>
+}
+
+// originsVar parses a comma-separated allowlist. Each entry is a bare origin such as https://app.example.com.
+func originsVar(getenv func(string) string, name string) ([]string, error) {
+        <span class="cov6" title="17">var origins []string
+        for _, entry := range strings.Split(getenv(name), ",") </span>{
+                <span class="cov6" title="21">entry = strings.TrimSpace(entry)
+                if entry == "" </span>{
+                        <span class="cov5" title="9">continue</span>
+                }
+                <span class="cov5" title="12">u, err := url.Parse(entry)
+                if err != nil || (u.Scheme != "http" &amp;&amp; u.Scheme != "https") || u.Host == "" || u.Path != "" || u.RawQuery != "" || u.Fragment != "" || u.User != nil </span>{
+                        <span class="cov5" title="9">return nil, fmt.Errorf("%s entries must look like https://app.example.com, got %q", name, entry)
+</span>                }
+                <span class="cov3" title="3">origins = append(origins, entry)</span>
+        }
+        <span class="cov5" title="8">return origins, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package domain
+
+// Codes for the failures the arithmetic itself can produce.
+const (
+        CodeDivisionByZero     = "DIVISION_BY_ZERO"
+        CodeNegativeSquareRoot = "NEGATIVE_SQUARE_ROOT"
+        CodeUndefinedResult    = "UNDEFINED_RESULT"
+)
+
+// Error is a business-rule failure. Message is a full sentence that is safe to show to a user.
+type Error struct {
+        Code    string
+        Message string
+}
+
+func (e *Error) Error() string { <span class="cov10" title="7">return e.Message }</span>
+
+// The sentinels are shared and must be treated as read-only.
+var (
+        ErrDivisionByZero     = &amp;Error{Code: CodeDivisionByZero, Message: "Division by zero is undefined."}
+        ErrNegativeSquareRoot = &amp;Error{Code: CodeNegativeSquareRoot, Message: "The square root of a negative number isn't a real number."}
+        ErrUndefinedResult    = &amp;Error{Code: CodeUndefinedResult, Message: "The result isn't a real number."}
+)
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">// Package domain holds the pure arithmetic. It knows nothing about HTTP, rounding or request shapes.
+package domain
+
+import "math"
+
+// Operation describes one calculator operation. Apply expects exactly Arity operands,
+// and the service checks the count before it calls.
+type Operation struct {
+        Name        string
+        Symbol      string
+        Description string
+        Arity       int
+        Apply       func(operands []float64) (float64, error)
+}
+
+var operations = []Operation{
+        {Name: "add", Symbol: "+", Arity: 2, Description: "Adds two numbers.", Apply: add},
+        {Name: "subtract", Symbol: "-", Arity: 2, Description: "Subtracts the second number from the first.", Apply: subtract},
+        {Name: "multiply", Symbol: "*", Arity: 2, Description: "Multiplies two numbers.", Apply: multiply},
+        {Name: "divide", Symbol: "/", Arity: 2, Description: "Divides the first number by the second.", Apply: divide},
+        {Name: "power", Symbol: "^", Arity: 2, Description: "Raises the first number to the power of the second.", Apply: power},
+        {Name: "sqrt", Symbol: "sqrt", Arity: 1, Description: "Returns the square root of a non-negative number.", Apply: sqrt},
+        {Name: "percentage", Symbol: "%", Arity: 2, Description: "Returns the first number percent of the second.", Apply: percentage},
+        {Name: "reciprocal", Symbol: "1/x", Arity: 1, Description: "Returns 1 divided by the number.", Apply: reciprocal},
+        {Name: "square", Symbol: "x^2", Arity: 1, Description: "Multiplies the number by itself.", Apply: square},
+}
+
+// All returns the operations in catalogue order. The slice is a copy.
+func All() []Operation {
+        <span class="cov2" title="3">out := make([]Operation, len(operations))
+        copy(out, operations)
+        return out
+</span>}
+
+// Lookup finds an operation by its exact, case-sensitive name.
+func Lookup(name string) (Operation, bool) {
+        <span class="cov6" title="32">for _, op := range operations </span>{
+                <span class="cov10" title="183">if op.Name == name </span>{
+                        <span class="cov6" title="28">return op, true
+</span>                }
+        }
+        <span class="cov3" title="4">return Operation{}, false</span>
+}
+
+func add(o []float64) (float64, error)      { <span class="cov2" title="2">return o[0] + o[1], nil }</span>
+func subtract(o []float64) (float64, error) { <span class="cov1" title="1">return o[0] - o[1], nil }</span>
+func multiply(o []float64) (float64, error) { <span class="cov1" title="1">return o[0] * o[1], nil }</span>
+func square(o []float64) (float64, error)   { <span class="cov2" title="2">return o[0] * o[0], nil }</span>
+
+func divide(o []float64) (float64, error) {
+        <span class="cov3" title="4">if o[1] == 0 </span>{
+                <span class="cov2" title="3">return 0, ErrDivisionByZero
+</span>        }
+        <span class="cov1" title="1">return o[0] / o[1], nil</span>
+}
+
+func power(o []float64) (float64, error) {
+        <span class="cov4" title="8">base, exp := o[0], o[1]
+        if base == 0 &amp;&amp; exp &lt; 0 </span>{
+                <span class="cov1" title="1">return 0, ErrDivisionByZero
+</span>        }
+        <span class="cov4" title="7">if base &lt; 0 &amp;&amp; exp != math.Trunc(exp) </span>{
+                <span class="cov1" title="1">return 0, ErrUndefinedResult
+</span>        }
+        <span class="cov4" title="6">return math.Pow(base, exp), nil</span>
+}
+
+func sqrt(o []float64) (float64, error) {
+        <span class="cov2" title="3">if o[0] &lt; 0 </span>{
+                <span class="cov1" title="1">return 0, ErrNegativeSquareRoot
+</span>        }
+        <span class="cov2" title="2">return math.Sqrt(o[0]), nil</span>
+}
+
+// percentage divides first so that 1e308 percent of 50 stays finite.
+func percentage(o []float64) (float64, error) { <span class="cov2" title="2">return o[0] / 100 * o[1], nil }</span>
+
+func reciprocal(o []float64) (float64, error) {
+        <span class="cov2" title="3">if o[0] == 0 </span>{
+                <span class="cov1" title="1">return 0, ErrDivisionByZero
+</span>        }
+        <span class="cov2" title="2">return 1 / o[0], nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package handler
+
+import (
+        "bytes"
+        "encoding/json"
+        "errors"
+        "io"
+        "mime"
+        "net/http"
+        "sort"
+
+        "calculator/internal/problem"
+)
+
+// badRequest is a decoding failure ready to be written as a Problem.
+type badRequest struct {
+        status int
+        code   string
+        detail string
+        fields []problem.FieldError
+}
+
+func (b *badRequest) write(w http.ResponseWriter, r *http.Request) {
+        <span class="cov6" title="37">problem.Write(w, r, b.status, b.code, b.detail, problem.WithErrors(b.fields...))
+</span>}
+
+func invalidRequest(fields ...problem.FieldError) *badRequest {
+        <span class="cov6" title="22">return &amp;badRequest{status: http.StatusBadRequest, code: problem.CodeInvalidRequest, detail: problem.DetailInvalidRequest, fields: fields}
+</span>}
+
+func invalidJSON() *badRequest {
+        <span class="cov4" title="7">return &amp;badRequest{status: http.StatusBadRequest, code: problem.CodeInvalidJSON, detail: problem.DetailInvalidJSON}
+</span>}
+
+// readBody checks the media type (415), then reads the body within the size limit (413).
+// The order is part of the contract: a 5000-byte text/plain body is a 415.
+func readBody(r *http.Request) ([]byte, *badRequest) {
+        <span class="cov8" title="99">mediaType, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
+        if err != nil || mediaType != "application/json" </span>{
+                <span class="cov3" title="6">return nil, &amp;badRequest{status: http.StatusUnsupportedMediaType, code: problem.CodeUnsupportedMediaType, detail: problem.DetailUnsupportedMediaType}
+</span>        }
+        <span class="cov8" title="93">body, err := io.ReadAll(r.Body)
+        if err != nil </span>{
+                <span class="cov2" title="3">var tooLarge *http.MaxBytesError
+                if errors.As(err, &amp;tooLarge) </span>{
+                        <span class="cov2" title="2">return nil, &amp;badRequest{status: http.StatusRequestEntityTooLarge, code: problem.CodePayloadTooLarge, detail: problem.DetailPayloadTooLarge}
+</span>                }
+                <span class="cov1" title="1">return nil, invalidJSON()</span>
+        }
+        <span class="cov8" title="90">return body, nil</span>
+}
+
+// parseObject accepts exactly one JSON object and returns its members undecoded.
+func parseObject(body []byte) (map[string]json.RawMessage, *badRequest) {
+        <span class="cov8" title="90">dec := json.NewDecoder(bytes.NewReader(body))
+        var value json.RawMessage
+        if err := dec.Decode(&amp;value); err != nil </span>{
+                <span class="cov3" title="4">return nil, invalidJSON()
+</span>        }
+        <span class="cov8" title="86">var extra json.RawMessage
+        if err := dec.Decode(&amp;extra); !errors.Is(err, io.EOF) </span>{
+                <span class="cov2" title="2">return nil, invalidJSON()
+</span>        }
+        <span class="cov8" title="84">var members map[string]json.RawMessage
+        if value[0] != '{' || json.Unmarshal(value, &amp;members) != nil </span>{
+                <span class="cov3" title="4">return nil, invalidRequest()
+</span>        }
+        <span class="cov8" title="80">return members, nil</span>
+}
+
+// decodeCalculation reads {operation, operands} and rejects anything else.
+func decodeCalculation(body []byte) (CalculationRequest, *badRequest) {
+        <span class="cov7" title="64">members, bad := parseObject(body)
+        if bad != nil </span>{
+                <span class="cov4" title="8">return CalculationRequest{}, bad
+</span>        }
+        <span class="cov7" title="56">var req CalculationRequest
+        var fields []problem.FieldError
+        var fe *problem.FieldError
+        if req.Operation, fe = readOperation(members); fe != nil </span>{
+                <span class="cov3" title="4">fields = append(fields, *fe)
+</span>        }
+        <span class="cov7" title="56">if req.Operands, fe = readOperands(members); fe != nil </span>{
+                <span class="cov4" title="10">fields = append(fields, *fe)
+</span>        }
+        <span class="cov7" title="56">fields = append(fields, unknownFields(members, "operation", "operands")...)
+        if len(fields) &gt; 0 </span>{
+                <span class="cov5" title="15">return CalculationRequest{}, invalidRequest(fields...)
+</span>        }
+        <span class="cov7" title="41">return req, nil</span>
+}
+
+// decodeOperands reads {operands}. An operation key counts as unknown here, because the path names the operation.
+func decodeOperands(body []byte) (OperandsRequest, *badRequest) {
+        <span class="cov6" title="26">members, bad := parseObject(body)
+        if bad != nil </span>{
+                <span class="cov2" title="2">return OperandsRequest{}, bad
+</span>        }
+        <span class="cov6" title="24">var req OperandsRequest
+        var fields []problem.FieldError
+        var fe *problem.FieldError
+        if req.Operands, fe = readOperands(members); fe != nil </span>{
+                <span class="cov1" title="1">fields = append(fields, *fe)
+</span>        }
+        <span class="cov6" title="24">fields = append(fields, unknownFields(members, "operands")...)
+        if len(fields) &gt; 0 </span>{
+                <span class="cov2" title="3">return OperandsRequest{}, invalidRequest(fields...)
+</span>        }
+        <span class="cov5" title="21">return req, nil</span>
+}
+
+func readOperation(members map[string]json.RawMessage) (string, *problem.FieldError) {
+        <span class="cov7" title="56">raw, present := members["operation"]
+        if !present </span>{
+                <span class="cov2" title="2">return "", &amp;problem.FieldError{Field: "operation", Message: "is required."}
+</span>        }
+        <span class="cov7" title="54">var name string
+        if isNull(raw) || json.Unmarshal(raw, &amp;name) != nil </span>{
+                <span class="cov2" title="2">return "", &amp;problem.FieldError{Field: "operation", Message: "must be a string."}
+</span>        }
+        <span class="cov7" title="52">return name, nil</span>
+}
+
+// readOperands needs an array of finite numbers. A string, null, boolean or nested value fails,
+// and so does a number outside the float64 range.
+func readOperands(members map[string]json.RawMessage) ([]float64, *problem.FieldError) {
+        <span class="cov8" title="80">raw, present := members["operands"]
+        if !present </span>{
+                <span class="cov2" title="2">return nil, &amp;problem.FieldError{Field: "operands", Message: "is required."}
+</span>        }
+        <span class="cov8" title="78">invalid := &amp;problem.FieldError{Field: "operands", Message: "must be an array of numbers."}
+        var items []json.RawMessage
+        if isNull(raw) || json.Unmarshal(raw, &amp;items) != nil </span>{
+                <span class="cov2" title="3">return nil, invalid
+</span>        }
+        <span class="cov7" title="75">operands := make([]float64, len(items))
+        for i, item := range items </span>{
+                <span class="cov8" title="128">if isNull(item) || json.Unmarshal(item, &amp;operands[i]) != nil </span>{
+                        <span class="cov3" title="6">return nil, invalid
+</span>                }
+        }
+        <span class="cov7" title="69">return operands, nil</span>
+}
+
+func isNull(raw json.RawMessage) bool { <span class="cov10" title="260">return bytes.Equal(raw, []byte("null")) }</span>
+
+// unknownFields lists every member outside known, sorted so the answer is deterministic.
+func unknownFields(members map[string]json.RawMessage, known ...string) []problem.FieldError {
+        <span class="cov8" title="80">var names []string
+        for name := range members </span>{
+                <span class="cov8" title="135">if !contains(known, name) </span>{
+                        <span class="cov2" title="3">names = append(names, name)
+</span>                }
+        }
+        <span class="cov8" title="80">sort.Strings(names)
+        fields := make([]problem.FieldError, len(names))
+        for i, name := range names </span>{
+                <span class="cov2" title="3">fields[i] = problem.FieldError{Field: name, Message: "isn't allowed."}
+</span>        }
+        <span class="cov8" title="80">return fields</span>
+}
+
+func contains(list []string, s string) bool {
+        <span class="cov8" title="135">for _, item := range list </span>{
+                <span class="cov9" title="191">if item == s </span>{
+                        <span class="cov8" title="132">return true
+</span>                }
+        }
+        <span class="cov2" title="3">return false</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">// Package handler holds the HTTP handlers. They decode, call the service and encode. They do no arithmetic.
+package handler
+
+import (
+        "encoding/json"
+        "errors"
+        "log/slog"
+        "net/http"
+        "strings"
+
+        "calculator/internal/domain"
+        "calculator/internal/problem"
+        "calculator/internal/service"
+        "calculator/internal/version"
+)
+
+// Calculator is the part of the service the handlers use.
+type Calculator interface {
+        Calculate(name string, operands []float64) (service.Result, error)
+        Operations() []domain.Operation
+}
+
+// Handler serves the API routes.
+type Handler struct {
+        calc   Calculator
+        logger *slog.Logger
+        spec   []byte
+}
+
+// New builds a Handler. spec is the OpenAPI document served at /api/v1/openapi.yaml.
+func New(calc Calculator, logger *slog.Logger, spec []byte) *Handler {
+        <span class="cov6" title="15">return &amp;Handler{calc: calc, logger: logger, spec: spec}
+</span>}
+
+// NotFound answers a request that matches no route.
+func NotFound(w http.ResponseWriter, r *http.Request) {
+        <span class="cov1" title="1">problem.Write(w, r, http.StatusNotFound, problem.CodeNotFound, problem.NotFoundDetail(r.Method, r.URL.Path))
+</span>}
+
+// MethodNotAllowed answers a known path called with the wrong method. Go's own 405 is plain text,
+// so every route checks the method itself.
+func MethodNotAllowed(w http.ResponseWriter, r *http.Request, allowed ...string) {
+        <span class="cov4" title="8">w.Header().Set("Allow", strings.Join(allowed, ", "))
+        problem.Write(w, r, http.StatusMethodNotAllowed, problem.CodeMethodNotAllowed, problem.MethodNotAllowedDetail(r.Method, r.URL.Path, allowed))
+</span>}
+
+func allow(w http.ResponseWriter, r *http.Request, method string) bool {
+        <span class="cov10" title="109">if r.Method == method </span>{
+                <span class="cov9" title="102">return true
+</span>        }
+        <span class="cov4" title="7">MethodNotAllowed(w, r, method)
+        return false</span>
+}
+
+// Calculations handles POST /api/v1/calculations.
+func (h *Handler) Calculations(w http.ResponseWriter, r *http.Request) {
+        <span class="cov9" title="73">if !allow(w, r, http.MethodPost) </span>{
+                <span class="cov2" title="2">return
+</span>        }
+        <span class="cov9" title="71">body, bad := readBody(r)
+        if bad != nil </span>{
+                <span class="cov4" title="7">bad.write(w, r)
+                return
+</span>        }
+        <span class="cov8" title="64">req, bad := decodeCalculation(body)
+        if bad != nil </span>{
+                <span class="cov7" title="23">bad.write(w, r)
+                return
+</span>        }
+        <span class="cov8" title="41">h.calculate(w, r, req.Operation, req.Operands, false)</span>
+}
+
+// RunOperation handles POST /api/v1/operations/{name}.
+func (h *Handler) RunOperation(w http.ResponseWriter, r *http.Request) {
+        <span class="cov7" title="29">if !allow(w, r, http.MethodPost) </span>{
+                <span class="cov1" title="1">return
+</span>        }
+        <span class="cov7" title="28">body, bad := readBody(r)
+        if bad != nil </span>{
+                <span class="cov2" title="2">bad.write(w, r)
+                return
+</span>        }
+        <span class="cov7" title="26">req, bad := decodeOperands(body)
+        if bad != nil </span>{
+                <span class="cov4" title="5">bad.write(w, r)
+                return
+</span>        }
+        <span class="cov6" title="21">h.calculate(w, r, r.PathValue("name"), req.Operands, true)</span>
+}
+
+// Operations handles GET /api/v1/operations.
+func (h *Handler) Operations(w http.ResponseWriter, r *http.Request) {
+        <span class="cov3" title="3">if !allow(w, r, http.MethodGet) </span>{
+                <span class="cov2" title="2">return
+</span>        }
+        <span class="cov1" title="1">ops := h.calc.Operations()
+        items := make([]OperationResponse, len(ops))
+        for i, op := range ops </span>{
+                <span class="cov5" title="9">items[i] = OperationResponse{Name: op.Name, Symbol: op.Symbol, Arity: op.Arity, Description: op.Description}
+</span>        }
+        <span class="cov1" title="1">h.writeJSON(w, r, OperationListResponse{Items: items, Total: len(items)})</span>
+}
+
+// OpenAPI handles GET /api/v1/openapi.yaml.
+func (h *Handler) OpenAPI(w http.ResponseWriter, r *http.Request) {
+        <span class="cov2" title="2">if !allow(w, r, http.MethodGet) </span>{
+                <span class="cov1" title="1">return
+</span>        }
+        <span class="cov1" title="1">w.Header().Set("Content-Type", "application/yaml")
+        _, _ = w.Write(h.spec)</span>
+}
+
+// Health handles GET /healthz.
+func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
+        <span class="cov2" title="2">if !allow(w, r, http.MethodGet) </span>{
+                <span class="cov1" title="1">return
+</span>        }
+        <span class="cov1" title="1">h.writeJSON(w, r, healthResponse{Status: "ok", Version: version.Version})</span>
+}
+
+func (h *Handler) calculate(w http.ResponseWriter, r *http.Request, name string, operands []float64, fromPath bool) {
+        <span class="cov8" title="62">res, err := h.calc.Calculate(name, operands)
+        if err != nil </span>{
+                <span class="cov7" title="36">h.fail(w, r, err, fromPath)
+                return
+</span>        }
+        <span class="cov7" title="26">h.writeJSON(w, r, CalculationResponse{Operation: res.Operation, Operands: res.Operands, Result: res.Value})</span>
+}
+
+// fail maps a service error to a Problem. An unknown name is a 422 in a body and a 404 in the path.
+func (h *Handler) fail(w http.ResponseWriter, r *http.Request, err error, fromPath bool) {
+        <span class="cov7" title="36">var unknown *service.UnknownOperationError
+        var count *service.OperandCountError
+        var rule *domain.Error
+        switch </span>{
+        case errors.As(err, &amp;unknown) &amp;&amp; fromPath:
+                <span class="cov1" title="1">problem.Write(w, r, http.StatusNotFound, problem.CodeUnknownOperation, problem.UnknownOperationDetail(unknown.Name))</span>
+        case errors.As(err, &amp;unknown):
+                <span class="cov4" title="5">problem.Write(w, r, http.StatusUnprocessableEntity, problem.CodeUnknownOperation, problem.UnknownOperationDetail(unknown.Name),
+                        problem.WithErrors(problem.FieldError{Field: "operation", Message: h.validNames()}))</span>
+        case errors.As(err, &amp;count):
+                <span class="cov5" title="11">problem.Write(w, r, http.StatusBadRequest, problem.CodeInvalidOperandCount, problem.DetailInvalidOperandCount,
+                        problem.WithErrors(problem.FieldError{Field: "operands", Message: count.Error() + "."}))</span>
+        case errors.As(err, &amp;rule):
+                <span class="cov6" title="18">problem.Write(w, r, http.StatusUnprocessableEntity, rule.Code, rule.Message)</span>
+        default:
+                <span class="cov1" title="1">h.internalError(w, r, err)</span>
+        }
+}
+
+func (h *Handler) validNames() string {
+        <span class="cov4" title="5">ops := h.calc.Operations()
+        names := make([]string, len(ops))
+        for i, op := range ops </span>{
+                <span class="cov8" title="45">names[i] = op.Name
+</span>        }
+        <span class="cov4" title="5">return "must be one of: " + strings.Join(names, ", ") + "."</span>
+}
+
+func (h *Handler) internalError(w http.ResponseWriter, r *http.Request, err error) {
+        <span class="cov2" title="2">h.logger.Error("request failed", "error", err, "requestId", problem.RequestID(r.Context()))
+        problem.Write(w, r, http.StatusInternalServerError, problem.CodeInternalError, problem.DetailInternalError)
+</span>}
+
+func (h *Handler) writeJSON(w http.ResponseWriter, r *http.Request, v any) {
+        <span class="cov7" title="29">body, err := json.Marshal(v)
+        if err != nil </span>{
+                <span class="cov1" title="1">h.internalError(w, r, err)
+                return
+</span>        }
+        <span class="cov7" title="28">w.Header().Set("Content-Type", "application/json")
+        _, _ = w.Write(body)</span>
+}
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">// Package middleware holds the HTTP middleware. Each one has the shape func(http.Handler) http.Handler
+// (or a function that returns one), so the server composes them in a fixed order.
+package middleware
+
+import (
+        "crypto/rand"
+        "encoding/hex"
+        "errors"
+        "io"
+        "log/slog"
+        "net/http"
+        "regexp"
+        "runtime/debug"
+        "strings"
+
+        "calculator/internal/problem"
+)
+
+// MaxBodyBytes is the request body limit for /api/ routes.
+const MaxBodyBytes = 4096
+
+const requestIDHeader = "X-Request-Id"
+
+const contentSecurityPolicy = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; " +
+        "connect-src 'self'; font-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+
+var validRequestID = regexp.MustCompile(`^[A-Za-z0-9._-]{1,64}$`)
+
+// IsAPIPath reports whether a path belongs to the API (/api or anything under /api/).
+func IsAPIPath(path string) bool {
+        <span class="cov10" title="39">return path == "/api" || strings.HasPrefix(path, "/api/")
+</span>}
+
+// RequestID gives every request an id. A valid incoming X-Request-Id is kept. Anything else is replaced
+// with 16 random bytes as 32 hex characters.
+func RequestID(next http.Handler) http.Handler {
+        <span class="cov4" title="4">return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span>{
+                <span class="cov7" title="12">id := r.Header.Get(requestIDHeader)
+                if !validRequestID.MatchString(id) </span>{
+                        <span class="cov6" title="8">id = newRequestID()
+</span>                }
+                <span class="cov7" title="12">w.Header().Set(requestIDHeader, id)
+                next.ServeHTTP(w, r.WithContext(problem.WithRequestID(r.Context(), id)))</span>
+        })
+}
+
+func newRequestID() string {
+        <span class="cov6" title="8">b := make([]byte, 16)
+        _, _ = rand.Read(b) // never fails since Go 1.24
+        return hex.EncodeToString(b)
+</span>}
+
+// Recover turns a panic into a 500 Problem. The body never carries the panic value or the stack.
+// Those go to the log.
+func Recover(logger *slog.Logger) func(http.Handler) http.Handler {
+        <span class="cov3" title="3">return func(next http.Handler) http.Handler </span>{
+                <span class="cov3" title="3">return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span>{
+                        <span class="cov3" title="3">defer func() </span>{
+                                <span class="cov3" title="3">v := recover()
+                                if v == nil </span>{
+                                        <span class="cov1" title="1">return
+</span>                                }
+                                <span class="cov2" title="2">if err, isErr := v.(error); isErr &amp;&amp; errors.Is(err, http.ErrAbortHandler) </span>{
+                                        <span class="cov1" title="1">panic(v)</span> // net/http uses this value to abort a response quietly
+                                }
+                                <span class="cov1" title="1">logger.Error("panic recovered", "panic", v, "stack", string(debug.Stack()), "requestId", problem.RequestID(r.Context()))
+                                problem.Write(w, r, http.StatusInternalServerError, problem.CodeInternalError, problem.DetailInternalError)</span>
+                        }()
+                        <span class="cov3" title="3">next.ServeHTTP(w, r)</span>
+                })
+        }
+}
+
+// SecurityHeaders sets the fixed hardening headers on every response and no-store on API and health responses.
+func SecurityHeaders(next http.Handler) http.Handler {
+        <span class="cov1" title="1">return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span>{
+                <span class="cov4" title="5">h := w.Header()
+                h.Set("X-Content-Type-Options", "nosniff")
+                h.Set("X-Frame-Options", "DENY")
+                h.Set("Referrer-Policy", "no-referrer")
+                h.Set("Content-Security-Policy", contentSecurityPolicy)
+                if IsAPIPath(r.URL.Path) || r.URL.Path == "/healthz" </span>{
+                        <span class="cov3" title="3">h.Set("Cache-Control", "no-store")
+</span>                }
+                <span class="cov4" title="5">next.ServeHTTP(w, r)</span>
+        })
+}
+
+// BodyLimit caps API request bodies. It wraps the body instead of answering itself, so the handler
+// can check the media type first (415) and report an oversize body (413) when it reads.
+func BodyLimit(limit int64) func(http.Handler) http.Handler {
+        <span class="cov2" title="2">return func(next http.Handler) http.Handler </span>{
+                <span class="cov2" title="2">return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span>{
+                        <span class="cov4" title="5">if !IsAPIPath(r.URL.Path) </span>{
+                                <span class="cov1" title="1">next.ServeHTTP(w, r)
+                                return
+</span>                        }
+                        <span class="cov4" title="4">limited := http.MaxBytesReader(w, r.Body, limit)
+                        r.Body = limited
+                        next.ServeHTTP(w, r)
+</span>                        // net/http drains an unread body itself, but only when it owns the reader. A handler that
+                        // answers 415 or 405 early would leave the bytes unread, and closing the socket on unread
+                        // bytes makes Windows reset the connection before the client reads the response.
+                        <span class="cov4" title="4">_, _ = io.Copy(io.Discard, limited)</span>
+                })
+        }
+}
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package middleware
+
+import (
+        "net/http"
+
+        "calculator/internal/problem"
+)
+
+// CORS answers preflights and tags responses for origins on the allowlist. With an empty list it does nothing,
+// so no response carries Access-Control-Allow-Origin.
+func CORS(allowed []string) func(http.Handler) http.Handler {
+        <span class="cov4" title="2">set := make(map[string]struct{}, len(allowed))
+        for _, origin := range allowed </span>{
+                <span class="cov1" title="1">set[origin] = struct{}{}
+</span>        }
+        <span class="cov4" title="2">return func(next http.Handler) http.Handler </span>{
+                <span class="cov4" title="2">if len(set) == 0 </span>{
+                        <span class="cov1" title="1">return next
+</span>                }
+                <span class="cov1" title="1">return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span>{
+                        <span class="cov10" title="6">h := w.Header()
+                        h.Add("Vary", "Origin")
+                        origin := r.Header.Get("Origin")
+                        if origin == "" </span>{
+                                <span class="cov1" title="1">next.ServeHTTP(w, r)
+                                return
+</span>                        }
+                        <span class="cov9" title="5">_, ok := set[origin]
+                        preflight := r.Method == http.MethodOptions &amp;&amp; r.Header.Get("Access-Control-Request-Method") != ""
+                        switch </span>{
+                        case preflight &amp;&amp; !ok:
+                                <span class="cov1" title="1">problem.Write(w, r, http.StatusForbidden, problem.CodeCORSOriginNotAllowed, problem.DetailCORSOriginNotAllowed)</span>
+                        case preflight:
+                                <span class="cov1" title="1">h.Set("Access-Control-Allow-Origin", origin)
+                                h.Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+                                h.Set("Access-Control-Allow-Headers", "Content-Type, X-Request-Id")
+                                h.Set("Access-Control-Max-Age", "600")
+                                w.WriteHeader(http.StatusNoContent)</span>
+                        default:
+                                <span class="cov6" title="3">if ok </span>{
+                                        <span class="cov4" title="2">h.Set("Access-Control-Allow-Origin", origin)
+                                        h.Set("Access-Control-Expose-Headers", "X-Request-Id, Retry-After")
+</span>                                }
+                                <span class="cov6" title="3">next.ServeHTTP(w, r)</span>
+                        }
+                })
+        }
+}
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">package middleware
+
+import (
+        "log/slog"
+        "net/http"
+        "time"
+
+        "calculator/internal/problem"
+)
+
+// statusWriter records the status and the byte count for the access log.
+type statusWriter struct {
+        http.ResponseWriter
+        status int
+        bytes  int
+}
+
+func (w *statusWriter) WriteHeader(status int) {
+        <span class="cov8" title="3">if w.status == 0 </span>{
+                <span class="cov5" title="2">w.status = status
+</span>        }
+        <span class="cov8" title="3">w.ResponseWriter.WriteHeader(status)</span>
+}
+
+func (w *statusWriter) Write(b []byte) (int, error) {
+        <span class="cov5" title="2">if w.status == 0 </span>{
+                <span class="cov1" title="1">w.status = http.StatusOK
+</span>        }
+        <span class="cov5" title="2">n, err := w.ResponseWriter.Write(b)
+        w.bytes += n
+        return n, err</span>
+}
+
+// Unwrap lets http.ResponseController reach the real writer for flushing and deadlines.
+func (w *statusWriter) Unwrap() http.ResponseWriter { <span class="cov5" title="2">return w.ResponseWriter }</span>
+
+// Logging writes one slog record per request. A panic that passes through still gets its record, as a 500.
+func Logging(logger *slog.Logger) func(http.Handler) http.Handler {
+        <span class="cov10" title="4">return func(next http.Handler) http.Handler </span>{
+                <span class="cov10" title="4">return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span>{
+                        <span class="cov10" title="4">start := time.Now()
+                        sw := &amp;statusWriter{ResponseWriter: w}
+                        finished := false
+                        defer func() </span>{
+                                <span class="cov10" title="4">status := sw.status
+                                switch </span>{
+                                case !finished:
+                                        <span class="cov1" title="1">status = http.StatusInternalServerError</span>
+                                case status == 0:
+                                        <span class="cov1" title="1">status = http.StatusOK</span>
+                                }
+                                <span class="cov10" title="4">logger.LogAttrs(r.Context(), slog.LevelInfo, "request",
+                                        slog.String("method", r.Method),
+                                        slog.String("path", r.URL.Path),
+                                        slog.Int("status", status),
+                                        slog.Int64("durationMs", time.Since(start).Milliseconds()),
+                                        slog.Int("bytes", sw.bytes),
+                                        slog.String("requestId", problem.RequestID(r.Context())),
+                                )</span>
+                        }()
+                        <span class="cov10" title="4">next.ServeHTTP(sw, r)
+                        finished = true</span>
+                })
+        }
+}
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">package middleware
+
+import (
+        "context"
+        "math"
+        "net"
+        "net/http"
+        "net/netip"
+        "strconv"
+        "strings"
+        "sync"
+        "time"
+
+        "calculator/internal/problem"
+)
+
+// RateLimitOptions configures RateLimit. A PerMinute of 0 turns the limiter off.
+type RateLimitOptions struct {
+        PerMinute  int
+        Burst      int
+        TrustProxy bool
+        // Now is the clock. It defaults to time.Now and exists so tests can drive time.
+        Now func() time.Time
+        // SweepEvery is how often the janitor evicts idle buckets. It defaults to one minute.
+        SweepEvery time.Duration
+}
+
+type bucket struct {
+        tokens float64
+        last   time.Time
+}
+
+// limiter is a token bucket per client key. Tokens refill at rate per second up to burst.
+type limiter struct {
+        mu      sync.Mutex
+        buckets map[string]*bucket
+        rate    float64
+        burst   float64
+        now     func() time.Time
+}
+
+func newLimiter(opts RateLimitOptions) *limiter {
+        <span class="cov6" title="8">now := opts.Now
+        if now == nil </span>{
+                <span class="cov1" title="1">now = time.Now
+</span>        }
+        <span class="cov6" title="8">return &amp;limiter{
+                buckets: make(map[string]*bucket),
+                rate:    float64(opts.PerMinute) / 60,
+                burst:   float64(opts.Burst),
+                now:     now,
+</span>        }
+}
+
+// allow takes one token for key. When none is left it returns the wait in whole seconds, at least 1.
+func (l *limiter) allow(key string) (bool, int) {
+        <span class="cov10" title="23">l.mu.Lock()
+        defer l.mu.Unlock()
+        now := l.now()
+        b, ok := l.buckets[key]
+        if !ok </span>{
+                <span class="cov7" title="11">b = &amp;bucket{tokens: l.burst, last: now}
+                l.buckets[key] = b
+</span>        }
+        <span class="cov10" title="23">if elapsed := now.Sub(b.last).Seconds(); elapsed &gt; 0 </span>{
+                <span class="cov4" title="3">b.tokens = math.Min(l.burst, b.tokens+elapsed*l.rate)
+</span>        }
+        <span class="cov10" title="23">b.last = now
+        if b.tokens &gt;= 1 </span>{
+                <span class="cov8" title="16">b.tokens--
+                return true, 0
+</span>        }
+        // Fewer than 1 token means the wait is positive, so rounding up gives at least 1 second.
+        <span class="cov6" title="7">return false, int(math.Ceil((1 - b.tokens) / l.rate))</span>
+}
+
+// sweep drops buckets that have been idle long enough to refill completely. A refilled bucket
+// equals a fresh one, so dropping it changes no answer.
+func (l *limiter) sweep() {
+        <span class="cov4" title="3">l.mu.Lock()
+        defer l.mu.Unlock()
+        now := l.now()
+        refill := time.Duration(l.burst / l.rate * float64(time.Second))
+        for key, b := range l.buckets </span>{
+                <span class="cov5" title="5">if now.Sub(b.last) &gt;= refill </span>{
+                        <span class="cov2" title="2">delete(l.buckets, key)
+</span>                }
+        }
+}
+
+func (l *limiter) size() int {
+        <span class="cov4" title="4">l.mu.Lock()
+        defer l.mu.Unlock()
+        return len(l.buckets)
+</span>}
+
+// janitor sweeps on a ticker until ctx ends.
+func (l *limiter) janitor(ctx context.Context, every time.Duration) {
+        <span class="cov6" title="7">ticker := time.NewTicker(every)
+        defer ticker.Stop()
+        for </span>{
+                <span class="cov6" title="8">select </span>{
+                case &lt;-ctx.Done():
+                        <span class="cov6" title="7">return</span>
+                case &lt;-ticker.C:
+                        <span class="cov1" title="1">l.sweep()</span>
+                }
+        }
+}
+
+// RateLimit guards /api/ routes with a token bucket per client. Health checks and static files pass freely.
+// The janitor goroutine stops when ctx ends.
+func RateLimit(ctx context.Context, opts RateLimitOptions) func(http.Handler) http.Handler {
+        <span class="cov6" title="7">if opts.PerMinute &lt;= 0 </span>{
+                <span class="cov1" title="1">return func(next http.Handler) http.Handler </span>{ <span class="cov1" title="1">return next }</span>
+        }
+        <span class="cov6" title="6">l := newLimiter(opts)
+        every := opts.SweepEvery
+        if every &lt;= 0 </span>{
+                <span class="cov6" title="6">every = time.Minute
+</span>        }
+        <span class="cov6" title="6">go l.janitor(ctx, every)
+        return func(next http.Handler) http.Handler </span>{
+                <span class="cov6" title="6">return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span>{
+                        <span class="cov9" title="22">if !IsAPIPath(r.URL.Path) </span>{
+                                <span class="cov2" title="2">next.ServeHTTP(w, r)
+                                return
+</span>                        }
+                        <span class="cov9" title="20">ok, wait := l.allow(clientKey(r, opts.TrustProxy))
+                        if ok </span>{
+                                <span class="cov8" title="13">next.ServeHTTP(w, r)
+                                return
+</span>                        }
+                        <span class="cov6" title="7">w.Header().Set("Retry-After", strconv.Itoa(wait))
+                        problem.Write(w, r, http.StatusTooManyRequests, problem.CodeRateLimited, problem.RateLimitedDetail(wait), problem.WithRetryAfter(wait))</span>
+                })
+        }
+}
+
+// clientKey is the remote address. With a trusted proxy it's the first X-Forwarded-For entry,
+// as long as that entry is an IP address.
+func clientKey(r *http.Request, trustProxy bool) string {
+        <span class="cov9" title="21">if trustProxy </span>{
+                <span class="cov5" title="5">first, _, _ := strings.Cut(r.Header.Get("X-Forwarded-For"), ",")
+                if addr, err := netip.ParseAddr(strings.TrimSpace(first)); err == nil </span>{
+                        <span class="cov4" title="3">return addr.String()
+</span>                }
+        }
+        <span class="cov9" title="18">host, _, err := net.SplitHostPort(r.RemoteAddr)
+        if err != nil </span>{
+                <span class="cov1" title="1">return r.RemoteAddr
+</span>        }
+        <span class="cov9" title="17">return host</span>
+}
+</pre>
+		
+		<pre class="file" id="file10" style="display: none">// Package problem writes RFC 7807 Problem Details, the one error shape the API uses.
+package problem
+
+import (
+        "context"
+        "encoding/json"
+        "fmt"
+        "net/http"
+        "strings"
+)
+
+// Error codes. docs/ERROR-CONTRACT.md lists them with their statuses.
+const (
+        CodeInvalidJSON          = "INVALID_JSON"
+        CodeInvalidRequest       = "INVALID_REQUEST"
+        CodeInvalidOperandCount  = "INVALID_OPERAND_COUNT"
+        CodeUnknownOperation     = "UNKNOWN_OPERATION"
+        CodeNotFound             = "NOT_FOUND"
+        CodeMethodNotAllowed     = "METHOD_NOT_ALLOWED"
+        CodePayloadTooLarge      = "PAYLOAD_TOO_LARGE"
+        CodeUnsupportedMediaType = "UNSUPPORTED_MEDIA_TYPE"
+        CodeCORSOriginNotAllowed = "CORS_ORIGIN_NOT_ALLOWED"
+        CodeRateLimited          = "RATE_LIMITED"
+        CodeInternalError        = "INTERNAL_ERROR"
+)
+
+// Fixed detail sentences from the error contract.
+const (
+        DetailInvalidJSON          = "The request body isn't valid JSON."
+        DetailInvalidRequest       = "The request body is invalid."
+        DetailInvalidOperandCount  = "The request has the wrong number of operands."
+        DetailPayloadTooLarge      = "The request body must be 4096 bytes or smaller."
+        DetailUnsupportedMediaType = "Content-Type must be application/json."
+        DetailCORSOriginNotAllowed = "Origin isn't allowed."
+        DetailInternalError        = "Something went wrong on our side. Quote the request id if you report it."
+)
+
+// FieldError names one invalid field.
+type FieldError struct {
+        Field   string `json:"field"`
+        Message string `json:"message"`
+}
+
+// Problem is the response body for every error.
+type Problem struct {
+        Type       string       `json:"type"`
+        Title      string       `json:"title"`
+        Status     int          `json:"status"`
+        Detail     string       `json:"detail"`
+        Instance   string       `json:"instance"`
+        Code       string       `json:"code"`
+        RequestID  string       `json:"requestId"`
+        Errors     []FieldError `json:"errors,omitempty"`
+        RetryAfter int          `json:"retryAfter,omitempty"`
+}
+
+// Option adjusts a Problem before it's written.
+type Option func(*Problem)
+
+// WithErrors attaches field-level errors.
+func WithErrors(errs ...FieldError) Option {
+        <span class="cov1" title="1">return func(p *Problem) </span>{ <span class="cov1" title="1">p.Errors = errs }</span>
+}
+
+// WithRetryAfter sets the whole seconds a rate-limited client should wait.
+func WithRetryAfter(seconds int) Option {
+        <span class="cov1" title="1">return func(p *Problem) </span>{ <span class="cov1" title="1">p.RetryAfter = seconds }</span>
+}
+
+// titles is fixed so a Go upgrade can't change the wording of http.StatusText.
+var titles = map[int]string{
+        http.StatusBadRequest:            "Bad Request",
+        http.StatusForbidden:             "Forbidden",
+        http.StatusNotFound:              "Not Found",
+        http.StatusMethodNotAllowed:      "Method Not Allowed",
+        http.StatusRequestEntityTooLarge: "Content Too Large",
+        http.StatusUnsupportedMediaType:  "Unsupported Media Type",
+        http.StatusUnprocessableEntity:   "Unprocessable Entity",
+        http.StatusTooManyRequests:       "Too Many Requests",
+        http.StatusInternalServerError:   "Internal Server Error",
+}
+
+// Title returns the fixed title for a status. A status outside the table falls back to the standard text.
+func Title(status int) string {
+        <span class="cov10" title="12">if t, ok := titles[status]; ok </span>{
+                <span class="cov9" title="11">return t
+</span>        }
+        <span class="cov1" title="1">return http.StatusText(status)</span>
+}
+
+type requestIDKey struct{}
+
+// WithRequestID stores the request id in a context.
+func WithRequestID(ctx context.Context, id string) context.Context {
+        <span class="cov1" title="1">return context.WithValue(ctx, requestIDKey{}, id)
+</span>}
+
+// RequestID returns the request id stored by the RequestID middleware, or an empty string.
+func RequestID(ctx context.Context) string {
+        <span class="cov4" title="3">id, _ := ctx.Value(requestIDKey{}).(string)
+        return id
+</span>}
+
+// Write sends a Problem. Instance comes from the request path and requestId from the request context.
+func Write(w http.ResponseWriter, r *http.Request, status int, code, detail string, opts ...Option) {
+        <span class="cov3" title="2">p := Problem{
+                Type:      "about:blank",
+                Title:     Title(status),
+                Status:    status,
+                Detail:    detail,
+                Instance:  r.URL.Path,
+                Code:      code,
+                RequestID: RequestID(r.Context()),
+</span>        }
+        <span class="cov3" title="2">for _, opt := range opts </span>{
+                <span class="cov3" title="2">opt(&amp;p)
+</span>        }
+        <span class="cov3" title="2">w.Header().Set("Content-Type", "application/problem+json")
+        w.WriteHeader(status)
+        _ = json.NewEncoder(w).Encode(p)</span>
+}
+
+// NotFoundDetail words the 404 for an unknown route.
+func NotFoundDetail(method, path string) string {
+        <span class="cov1" title="1">return fmt.Sprintf("No route matches %s %s.", method, path)
+</span>}
+
+// MethodNotAllowedDetail words the 405 and lists the allowed methods.
+func MethodNotAllowedDetail(method, path string, allowed []string) string {
+        <span class="cov3" title="2">return fmt.Sprintf("%s isn't allowed on %s. Allowed: %s.", method, path, strings.Join(allowed, ", "))
+</span>}
+
+// RateLimitedDetail words the 429 for a wait of whole seconds.
+func RateLimitedDetail(seconds int) string {
+        <span class="cov4" title="3">if seconds == 1 </span>{
+                <span class="cov1" title="1">return "Too many requests. Try again in 1 second."
+</span>        }
+        <span class="cov3" title="2">return fmt.Sprintf("Too many requests. Try again in %d seconds.", seconds)</span>
+}
+
+// UnknownOperationDetail words the unknown-operation error.
+func UnknownOperationDetail(name string) string {
+        <span class="cov1" title="1">return fmt.Sprintf("Unknown operation %q.", name)
+</span>}
+</pre>
+		
+		<pre class="file" id="file11" style="display: none">// Package server builds the router and the middleware chain, and runs the HTTP server.
+package server
+
+import (
+        "context"
+        "errors"
+        "fmt"
+        "log/slog"
+        "net"
+        "net/http"
+        "os"
+        "path"
+        "strconv"
+        "strings"
+        "time"
+
+        "calculator/api"
+        "calculator/internal/config"
+        "calculator/internal/handler"
+        "calculator/internal/middleware"
+        "calculator/internal/service"
+)
+
+// New builds the handler with its full middleware chain. The rate limiter's janitor goroutine
+// lives as long as the process. Run ties it to its context instead.
+func New(cfg config.Config, logger *slog.Logger) http.Handler {
+        <span class="cov1" title="1">return build(context.Background(), cfg, logger, time.Now)
+</span>}
+
+func build(ctx context.Context, cfg config.Config, logger *slog.Logger, now func() time.Time) http.Handler {
+        <span class="cov6" title="27">return withMiddleware(ctx, routes(cfg, logger), cfg, logger, now)
+</span>}
+
+func routes(cfg config.Config, logger *slog.Logger) http.Handler {
+        <span class="cov6" title="28">h := handler.New(service.New(), logger, api.Spec)
+</span>
+        <span class="cov6" title="28">mux := http.NewServeMux()
+        mux.HandleFunc("/api/v1/calculations", h.Calculations)
+        mux.HandleFunc("/api/v1/operations", h.Operations)
+        mux.HandleFunc("/api/v1/operations/{name}", h.RunOperation)
+        mux.HandleFunc("/api/v1/openapi.yaml", h.OpenAPI)
+        mux.HandleFunc("/healthz", h.Health)
+        mux.HandleFunc("/api", handler.NotFound)
+        mux.HandleFunc("/api/", handler.NotFound)
+        static := newStatic(cfg.StaticDir, logger)
+        mux.Handle("/", static)
+        return withoutRedirects(mux, static)
+</span>}
+
+// withoutRedirects answers paths with dot segments or doubled slashes itself. ServeMux would send
+// those a 307 to the cleaned path. The static handler cleans the path on its own and never leaves
+// the site directory, and an API path like that is a plain 404.
+func withoutRedirects(mux, static http.Handler) http.Handler {
+        <span class="cov6" title="28">return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) </span>{
+                <span class="cov10" title="170">p := r.URL.Path
+                if p == "" || r.Method == http.MethodConnect || cleanPath(p) == p </span>{
+                        <span class="cov9" title="161">mux.ServeHTTP(w, r)
+                        return
+</span>                }
+                <span class="cov4" title="9">if p == "/api" || strings.HasPrefix(p, "/api/") </span>{
+                        <span class="cov2" title="2">handler.NotFound(w, r)
+                        return
+</span>                }
+                <span class="cov4" title="7">static.ServeHTTP(w, r)</span>
+        })
+}
+
+// cleanPath mirrors how ServeMux cleans a path: path.Clean plus the trailing slash.
+func cleanPath(p string) string {
+        <span class="cov10" title="170">cleaned := path.Clean(p)
+        if p[len(p)-1] == '/' &amp;&amp; cleaned != "/" </span>{
+                <span class="cov1" title="1">cleaned += "/"
+</span>        }
+        <span class="cov10" title="170">return cleaned</span>
+}
+
+// withMiddleware wraps next in the fixed chain. Outermost first: RequestID, Recover, SecurityHeaders,
+// Logging, CORS, RateLimit, BodyLimit. Every response, including the ones the inner layers write
+// themselves, carries the request id and the security headers.
+func withMiddleware(ctx context.Context, next http.Handler, cfg config.Config, logger *slog.Logger, now func() time.Time) http.Handler {
+        <span class="cov6" title="29">rateLimit := middleware.RateLimit(ctx, middleware.RateLimitOptions{
+                PerMinute:  cfg.RateLimitPerMinute,
+                Burst:      cfg.RateLimitBurst,
+                TrustProxy: cfg.TrustProxy,
+                Now:        now,
+        })
+        chained := middleware.BodyLimit(middleware.MaxBodyBytes)(next)
+        chained = rateLimit(chained)
+        chained = middleware.CORS(cfg.CORSAllowedOrigins)(chained)
+        chained = middleware.Logging(logger)(chained)
+        chained = middleware.SecurityHeaders(chained)
+        chained = middleware.Recover(logger)(chained)
+        return middleware.RequestID(chained)
+</span>}
+
+// Run listens on cfg.Port and serves until ctx ends, then shuts down within cfg.ShutdownTimeout.
+func Run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
+        <span class="cov2" title="2">var lc net.ListenConfig
+        ln, err := lc.Listen(ctx, "tcp", ":"+strconv.Itoa(cfg.Port))
+        if err != nil </span>{
+                <span class="cov1" title="1">return fmt.Errorf("listen: %w", err)
+</span>        }
+        <span class="cov1" title="1">return Serve(ctx, ln, cfg, logger)</span>
+}
+
+// Serve runs the server on an existing listener. It returns nil after a clean shutdown.
+func Serve(ctx context.Context, ln net.Listener, cfg config.Config, logger *slog.Logger) error {
+        <span class="cov2" title="3">srv := &amp;http.Server{
+                Handler:           build(ctx, cfg, logger, time.Now),
+                ReadHeaderTimeout: 5 * time.Second,
+                ReadTimeout:       10 * time.Second,
+                WriteTimeout:      10 * time.Second,
+                IdleTimeout:       60 * time.Second,
+                ErrorLog:          slog.NewLogLogger(logger.Handler(), slog.LevelError),
+</span>        }
+        <span class="cov2" title="3">failed := make(chan error, 1)
+        go func() </span>{ <span class="cov2" title="3">failed &lt;- srv.Serve(ln) }</span>()
+
+        <span class="cov2" title="3">logger.Info("server listening", "addr", ln.Addr().String(), "staticDir", cfg.StaticDir)
+        select </span>{
+        case err := &lt;-failed:
+                <span class="cov1" title="1">return fmt.Errorf("serve: %w", err)</span>
+        case &lt;-ctx.Done():<span class="cov2" title="2"></span>
+        }
+
+        <span class="cov2" title="2">logger.Info("shutting down", "timeoutSeconds", int(cfg.ShutdownTimeout.Seconds()))
+        shutdownCtx, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
+        defer cancel()
+        if err := srv.Shutdown(shutdownCtx); err != nil </span>{
+                <span class="cov0" title="0">return fmt.Errorf("shutdown: %w", err)
+</span>        }
+        <span class="cov2" title="2">if err := &lt;-failed; !errors.Is(err, http.ErrServerClosed) </span>{
+                <span class="cov0" title="0">return fmt.Errorf("serve: %w", err)
+</span>        }
+        <span class="cov2" title="2">return nil</span>
+}
+
+// staticDirExists reports whether dir is a directory, so New can warn about a bad STATIC_DIR.
+func staticDirExists(dir string) bool {
+        <span class="cov4" title="6">info, err := os.Stat(dir)
+        return err == nil &amp;&amp; info.IsDir()
+</span>}
+</pre>
+		
+		<pre class="file" id="file12" style="display: none">package server
+
+import (
+        "io"
+        "io/fs"
+        "log/slog"
+        "mime"
+        "net/http"
+        "os"
+        "path"
+        "strings"
+
+        "calculator/internal/handler"
+)
+
+const (
+        indexFile       = "index.html"
+        assetsPrefix    = "/assets/"
+        cacheImmutable  = "public, max-age=31536000, immutable"
+        cacheRevalidate = "no-cache"
+)
+
+// contentTypes covers what a Vite build emits. Windows reads MIME types from the registry,
+// which can map .js to text/plain, so the common ones are fixed here.
+var contentTypes = map[string]string{
+        ".html":        "text/html; charset=utf-8",
+        ".js":          "text/javascript; charset=utf-8",
+        ".mjs":         "text/javascript; charset=utf-8",
+        ".css":         "text/css; charset=utf-8",
+        ".json":        "application/json",
+        ".map":         "application/json",
+        ".webmanifest": "application/manifest+json",
+        ".txt":         "text/plain; charset=utf-8",
+        ".svg":         "image/svg+xml",
+        ".png":         "image/png",
+        ".jpg":         "image/jpeg",
+        ".ico":         "image/x-icon",
+        ".woff2":       "font/woff2",
+}
+
+// newStatic serves the built frontend from dir. An empty dir makes the service API-only, so every
+// non-API path is a 404 Problem.
+func newStatic(dir string, logger *slog.Logger) http.Handler {
+        <span class="cov8" title="28">if dir == "" </span>{
+                <span class="cov8" title="22">return http.HandlerFunc(handler.NotFound)
+</span>        }
+        <span class="cov5" title="6">if !staticDirExists(dir) </span>{
+                <span class="cov1" title="1">logger.Warn("STATIC_DIR is not a directory, static files will answer 404", "staticDir", dir)
+</span>        }
+        <span class="cov5" title="6">return &amp;staticHandler{files: os.DirFS(dir)}</span>
+}
+
+type staticHandler struct {
+        files fs.FS
+}
+
+func (s *staticHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+        <span class="cov9" title="32">if r.Method != http.MethodGet &amp;&amp; r.Method != http.MethodHead </span>{
+                <span class="cov4" title="4">handler.MethodNotAllowed(w, r, http.MethodGet, http.MethodHead)
+                return
+</span>        }
+        // Cleaning an absolute path removes every ".." before the name reaches the file system.
+        // os.DirFS also refuses names with backslashes or drive colons on Windows.
+        <span class="cov8" title="28">clean := path.Clean("/" + r.URL.Path)
+        name := strings.TrimPrefix(clean, "/")
+        if name == "" </span>{
+                <span class="cov4" title="4">name = indexFile
+</span>        }
+        <span class="cov8" title="28">if s.serve(w, r, name, clean) </span>{
+                <span class="cov5" title="8">return
+</span>        }
+        // A missing hashed asset is a real 404. Serving the page for it would hide a broken deploy.
+        <span class="cov8" title="20">if strings.HasPrefix(clean, assetsPrefix) || !s.serve(w, r, indexFile, "/"+indexFile) </span>{
+                <span class="cov4" title="5">handler.NotFound(w, r)
+</span>        }
+}
+
+// serve writes the file called name and reports whether it found a regular file.
+func (s *staticHandler) serve(w http.ResponseWriter, r *http.Request, name, urlPath string) bool {
+        <span class="cov10" title="46">f, err := s.files.Open(name)
+        if err != nil </span>{
+                <span class="cov7" title="19">return false
+</span>        }
+        <span class="cov8" title="27">defer func() </span>{ <span class="cov8" title="27">_ = f.Close() }</span>()
+        <span class="cov8" title="27">info, err := f.Stat()
+        if err != nil || info.IsDir() </span>{
+                <span class="cov2" title="2">return false
+</span>        }
+        <span class="cov8" title="25">content, ok := f.(io.ReadSeeker)
+        if !ok </span>{
+                <span class="cov2" title="2">return false
+</span>        }
+        <span class="cov8" title="23">h := w.Header()
+        if ct, known := contentTypes[strings.ToLower(path.Ext(name))]; known </span>{
+                <span class="cov8" title="22">h.Set("Content-Type", ct)
+</span>        } else <span class="cov1" title="1">if ct := mime.TypeByExtension(path.Ext(name)); ct != "" </span>{
+                <span class="cov0" title="0">h.Set("Content-Type", ct)
+</span>        }
+        <span class="cov8" title="23">if strings.HasPrefix(urlPath, assetsPrefix) </span>{
+                <span class="cov3" title="3">h.Set("Cache-Control", cacheImmutable)
+</span>        } else {
+                <span class="cov8" title="20">h.Set("Cache-Control", cacheRevalidate)
+</span>        }
+        <span class="cov8" title="23">http.ServeContent(w, r, name, info.ModTime(), content)
+        return true</span>
+}
+</pre>
+		
+		<pre class="file" id="file13" style="display: none">// Package service owns the calculation rules: operation lookup, operand counts,
+// rejection of NaN and infinity, 15-digit rounding and negative-zero cleanup.
+package service
+
+import (
+        "fmt"
+        "math"
+        "strconv"
+
+        "calculator/internal/domain"
+)
+
+// CodeResultOutOfRange marks a result that overflowed float64.
+const CodeResultOutOfRange = "RESULT_OUT_OF_RANGE"
+
+var errResultOutOfRange = &amp;domain.Error{Code: CodeResultOutOfRange, Message: "The result is too large to represent."}
+
+// UnknownOperationError reports a name that no operation answers to.
+type UnknownOperationError struct{ Name string }
+
+func (e *UnknownOperationError) Error() string {
+        <span class="cov4" title="4">return fmt.Sprintf("unknown operation %q", e.Name)
+</span>}
+
+// OperandCountError reports an operand list of the wrong length.
+type OperandCountError struct {
+        Operation string
+        Want      int
+        Got       int
+}
+
+func (e *OperandCountError) Error() string {
+        <span class="cov5" title="5">noun := "operands"
+        if e.Want == 1 </span>{
+                <span class="cov2" title="2">noun = "operand"
+</span>        }
+        <span class="cov5" title="5">return fmt.Sprintf("%s needs %d %s, got %d", e.Operation, e.Want, noun, e.Got)</span>
+}
+
+// Result is one finished calculation.
+type Result struct {
+        Operation string
+        Operands  []float64
+        Value     float64
+}
+
+// Calculator runs operations. It keeps no state between calls. lookup is a field so a test can
+// add an operation that returns NaN, which no real operation can.
+type Calculator struct {
+        lookup func(name string) (domain.Operation, bool)
+}
+
+// New returns a Calculator.
+func New() *Calculator { <span class="cov5" title="5">return &amp;Calculator{lookup: domain.Lookup} }</span>
+
+// Operations lists the catalogue in its fixed order.
+func (*Calculator) Operations() []domain.Operation { <span class="cov1" title="1">return domain.All() }</span>
+
+// Calculate validates the request, runs the operation and cleans up the result.
+func (c *Calculator) Calculate(name string, operands []float64) (Result, error) {
+        <span class="cov10" title="32">op, ok := c.lookup(name)
+        if !ok </span>{
+                <span class="cov4" title="4">return Result{}, &amp;UnknownOperationError{Name: name}
+</span>        }
+        <span class="cov9" title="28">if len(operands) != op.Arity </span>{
+                <span class="cov5" title="5">return Result{}, &amp;OperandCountError{Operation: name, Want: op.Arity, Got: len(operands)}
+</span>        }
+        <span class="cov9" title="23">value, err := op.Apply(operands)
+        if err != nil </span>{
+                <span class="cov3" title="3">return Result{}, err
+</span>        }
+        <span class="cov8" title="20">switch </span>{
+        case math.IsNaN(value):
+                <span class="cov1" title="1">return Result{}, domain.ErrUndefinedResult</span>
+        case math.IsInf(value, 0):
+                <span class="cov5" title="5">return Result{}, errResultOutOfRange</span>
+        }
+        <span class="cov7" title="14">return Result{Operation: name, Operands: operands, Value: clean(value)}, nil</span>
+}
+
+// clean rounds to 15 significant digits and turns negative zero into zero.
+// Rounding can push a value just under MaxFloat64 over the edge. ParseFloat then
+// reports a range error and the unrounded value stays.
+func clean(x float64) float64 {
+        <span class="cov7" title="14">rounded, err := strconv.ParseFloat(strconv.FormatFloat(x, 'g', 15, 64), 64)
+        if err != nil </span>{
+                <span class="cov1" title="1">rounded = x
+</span>        }
+        <span class="cov7" title="14">if rounded == 0 </span>{
+                <span class="cov2" title="2">return 0
+</span>        }
+        <span class="cov7" title="12">return rounded</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

@@ -26,6 +26,7 @@ const STDERR_TAIL_BYTES = 8_192;
 
 // Settings the server reads. A value left over in the caller's shell must not leak in.
 const SERVER_ENV_KEYS = [
+  'LISTEN_HOST',
   'PORT',
   'RATE_LIMIT_PER_MINUTE',
   'RATE_LIMIT_BURST',
@@ -36,7 +37,10 @@ const SERVER_ENV_KEYS = [
   'LOG_FORMAT',
 ];
 
+/** EVAL_SERVER_BINARY points the evals at another build, such as a mutant from the mutation audit. */
 function binaryPath(): string {
+  const override = process.env.EVAL_SERVER_BINARY?.trim();
+  if (override) return path.resolve(override);
   return path.join(
     repoRoot,
     'backend',
@@ -89,7 +93,9 @@ function waitForExit(child: ChildProcess): Promise<void> {
 export async function startServer(options: StartServerOptions = {}): Promise<RunningServer> {
   const binary = binaryPath();
   if (!existsSync(binary)) {
-    throw new Error(`Backend binary not found at ${binary}. Run "npm run build:backend" first.`);
+    throw new Error(
+      `Backend binary not found at ${binary}. Run "npm run build:backend" first, or fix EVAL_SERVER_BINARY.`,
+    );
   }
 
   const port = await freePort();
@@ -98,6 +104,7 @@ export async function startServer(options: StartServerOptions = {}): Promise<Run
   const env: Record<string, string | undefined> = { ...process.env };
   for (const key of SERVER_ENV_KEYS) delete env[key];
   Object.assign(env, {
+    LISTEN_HOST: '127.0.0.1',
     PORT: String(port),
     RATE_LIMIT_PER_MINUTE: '0',
     LOG_LEVEL: 'warn',
