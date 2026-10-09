@@ -1,0 +1,34 @@
+flowchart TB
+  req["HTTP request"]:::person
+
+  subgraph mw["package middleware, outermost first"]
+    direction LR
+    m1["RequestID"]:::mid --> m2["Recover"]:::mid --> m3["SecurityHeaders"]:::mid --> m4["Logging"]:::mid --> m5["CORS"]:::mid --> m6["RateLimit"]:::mid --> m7["BodyLimit"]:::mid
+  end
+
+  server["server<br/>router, static files, graceful shutdown<br/>wired by cmd/server/main.go"]:::support
+  handler["handler<br/>decode JSON, check shape, map errors to HTTP"]:::layer
+  service["service<br/>validate, dispatch, round to 15 digits, catalogue"]:::layer
+  domain["domain<br/>pure float64 arithmetic and domain errors<br/>imports no net/http"]:::domain
+
+  problem["problem<br/>RFC 7807 writer"]:::support
+  config["config<br/>environment parsing"]:::support
+  version["version<br/>the 1.0.0 constant"]:::support
+  embed["api/embed<br/>openapi.yaml through go:embed"]:::support
+
+  req --> m1
+  m7 --> server
+  server ==> handler ==> service ==> domain
+
+  config -.-> server
+  problem -.->|"error responses"| mw
+  problem -.->|"error responses"| handler
+  version -.->|"/healthz"| handler
+  embed -.->|"/api/v1/openapi.yaml"| handler
+
+  classDef person fill:#f3f4f6,stroke:#6b7280,color:#111827
+  classDef mid fill:#fef3c7,stroke:#d97706,color:#111827
+  classDef layer fill:#dcfce7,stroke:#16a34a,color:#111827,stroke-width:2px
+  classDef domain fill:#dcfce7,stroke:#15803d,color:#111827,stroke-width:4px
+  classDef support fill:#e0e7ff,stroke:#4f46e5,color:#111827
+  style mw fill:#ffffff,stroke:#d97706,color:#111827

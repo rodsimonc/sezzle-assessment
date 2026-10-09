@@ -1,0 +1,44 @@
+stateDiagram-v2
+  direction LR
+
+  [*] --> Idle
+
+  Idle --> Entering: digit or Decimal point
+  Idle --> OperatorPending: operator key
+  Entering --> Entering: digit, Decimal point, Negate, Backspace
+  Entering --> OperatorPending: operator key
+  OperatorPending --> OperatorPending: another operator replaces it
+  OperatorPending --> Entering: digit
+
+  Entering --> Awaiting: Equals, unary key, Memory add or subtract
+  Entering --> Awaiting: operator key after left, operator and right
+  ShowingResult --> Awaiting: Equals repeats, unary key, Memory add or subtract
+  OperatorPending --> Awaiting: Equals
+
+  Awaiting --> ShowingResult: 200 from the API
+  Awaiting --> OperatorPending: 200 after a chained operator
+  Awaiting --> Error: problem, network failure or odd response
+
+  ShowingResult --> Entering: digit or Decimal point
+  ShowingResult --> OperatorPending: operator key
+  Error --> Entering: digit or Decimal point clears the alert
+
+  state "Awaiting API response" as Awaiting
+
+  note right of Awaiting
+    aria-busy is true and key presses are ignored.
+    Only the API computes numbers.
+  end note
+
+  note left of Error
+    Display reads Error and ErrorBanner holds the detail.
+    Only digits, Decimal point, All clear, Backspace
+    and Memory clear act. All clear returns to Idle.
+  end note
+
+  note right of Idle
+    All clear returns to Idle from any state and keeps memory.
+    Components: App holds Display, Keypad with its Keys,
+    HistoryPanel and ErrorBanner.
+    The reducer is pure. useCalculator sends its requests.
+  end note

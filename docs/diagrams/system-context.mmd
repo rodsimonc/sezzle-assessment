@@ -1,0 +1,25 @@
+flowchart LR
+  user["Person with a browser<br/>desktop or phone"]:::person
+  dev["Developer<br/>curl, Postman, requests.http"]:::person
+  probe["Health check caller<br/>Docker HEALTHCHECK, load balancer"]:::person
+
+  subgraph docker["Docker boundary: calculator:1.0.0, runs as non-root"]
+    svc["Go service on port 8080<br/>GET / and /assets/*: React bundle<br/>/api/v1/*: JSON API<br/>/healthz: liveness"]:::backend
+  end
+
+  subgraph local["Local development only"]
+    vite["Vite dev server on 5173<br/>hot reload"]:::frontend
+    gosvc["Go service on 8080<br/>npm run dev:backend"]:::backend
+    vite -->|"proxies /api and /healthz"| gosvc
+  end
+
+  user -->|"page and API calls, same origin"| svc
+  dev -->|"HTTP and JSON"| svc
+  probe -->|"GET /healthz"| svc
+  user -.->|"npm run dev"| vite
+
+  classDef person fill:#f3f4f6,stroke:#6b7280,color:#111827
+  classDef backend fill:#dcfce7,stroke:#16a34a,color:#111827
+  classDef frontend fill:#dbeafe,stroke:#2563eb,color:#111827
+  style docker fill:#ffffff,stroke:#6b7280,stroke-dasharray:6 4,color:#111827
+  style local fill:#ffffff,stroke:#9ca3af,stroke-dasharray:2 4,color:#111827

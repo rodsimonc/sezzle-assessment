@@ -1,0 +1,42 @@
+sequenceDiagram
+  autonumber
+  participant K as Keypad
+  participant R as reducer
+  participant H as useCalculator
+  participant A as API client
+  box rgb(220, 252, 231) Go service
+    participant M as middleware
+    participant HD as handler
+    participant S as service
+    participant D as domain
+  end
+
+  K->>R: keys 2, Add, 3, Equals
+  R-->>H: pending add with 2 and 3
+  H->>A: calculate add [2, 3]
+  Note over H,A: keys are ignored while the request is in flight
+  A->>M: POST /api/v1/calculations<br/>{"operation":"add","operands":[2,3]}
+  Note over M: RequestID, Recover, SecurityHeaders,<br/>Logging, CORS, RateLimit, BodyLimit
+  M->>HD: request with an id, inside the limits
+  HD->>HD: check media type, decode, validate shape
+  HD->>S: Calculate add [2, 3]
+
+  alt 2 + 3 works
+    S->>D: Add 2 and 3
+    D-->>S: 5
+    S->>S: round to 15 significant digits
+    S-->>HD: 5
+    HD-->>A: 200 application/json<br/>{"operation":"add","operands":[2,3],"result":5}
+    A-->>H: result 5
+    H->>R: dispatch result 5
+    R-->>K: display shows 5
+    H->>H: write "2 + 3 = 5" to history in localStorage
+  else 1 ÷ 0 is refused
+    S->>D: Divide 1 by 0
+    D-->>S: DivisionByZero error
+    S-->>HD: domain error
+    HD-->>A: 422 application/problem+json<br/>code DIVISION_BY_ZERO
+    A-->>H: problem with its detail text
+    H->>R: dispatch failure
+    R-->>K: display shows Error, ErrorBanner shows the detail
+  end

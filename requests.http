@@ -1,0 +1,193 @@
+# Requests for the calculator service v1.0.0.
+# Works with the VS Code REST Client extension and with the JetBrains HTTP client.
+# Start the service first: npm run dev (port 8080) or docker compose up.
+
+@baseUrl = http://localhost:8080
+
+### Calculations / Add two numbers
+# Runs add through the resource endpoint. Expects 200 and 5.
+POST {{baseUrl}}/api/v1/calculations
+Content-Type: application/json
+
+{"operation":"add","operands":[2,3]}
+
+### Calculations / Subtract
+# Runs subtract through the resource endpoint. Expects 200 and 6.
+POST {{baseUrl}}/api/v1/calculations
+Content-Type: application/json
+
+{"operation":"subtract","operands":[10,4]}
+
+### Calculations / Multiply
+# Runs multiply through the resource endpoint. Expects 200 and 42.
+POST {{baseUrl}}/api/v1/calculations
+Content-Type: application/json
+
+{"operation":"multiply","operands":[6,7]}
+
+### Calculations / Divide
+# Runs divide through the resource endpoint. Expects 200 and 2.5.
+POST {{baseUrl}}/api/v1/calculations
+Content-Type: application/json
+
+{"operation":"divide","operands":[10,4]}
+
+### Calculations / Raise to a power
+# Runs power through the resource endpoint. Expects 200 and 1024.
+POST {{baseUrl}}/api/v1/calculations
+Content-Type: application/json
+
+{"operation":"power","operands":[2,10]}
+
+### Calculations / Square root
+# Runs sqrt through the resource endpoint. Expects 200 and 3.
+POST {{baseUrl}}/api/v1/calculations
+Content-Type: application/json
+
+{"operation":"sqrt","operands":[9]}
+
+### Calculations / Percentage, 15 percent of 200
+# Runs percentage through the resource endpoint. Expects 200 and 30.
+POST {{baseUrl}}/api/v1/calculations
+Content-Type: application/json
+
+{"operation":"percentage","operands":[15,200]}
+
+### Calculations / Reciprocal
+# Runs reciprocal through the resource endpoint. Expects 200 and 0.25.
+POST {{baseUrl}}/api/v1/calculations
+Content-Type: application/json
+
+{"operation":"reciprocal","operands":[4]}
+
+### Calculations / Square of a negative number
+# Runs square through the resource endpoint. Expects 200 and 9.
+POST {{baseUrl}}/api/v1/calculations
+Content-Type: application/json
+
+{"operation":"square","operands":[-3]}
+
+### Calculations / Rounding removes float noise
+# Runs add through the resource endpoint. Expects 200 and 0.3.
+POST {{baseUrl}}/api/v1/calculations
+Content-Type: application/json
+
+{"operation":"add","operands":[0.1,0.2]}
+
+### Operation routes / Add through the operation route
+# Same answer as the resource endpoint. The operation comes from the path.
+POST {{baseUrl}}/api/v1/operations/add
+Content-Type: application/json
+
+{"operands":[2,3]}
+
+### Operation routes / Divide through the operation route
+# Expects 200 and 2.5.
+POST {{baseUrl}}/api/v1/operations/divide
+Content-Type: application/json
+
+{"operands":[10,4]}
+
+### Catalogue and meta / List operations
+# Returns the nine operations in a fixed order.
+GET {{baseUrl}}/api/v1/operations
+
+### Catalogue and meta / Get the OpenAPI document
+# Serves the exact file the backend was built with.
+GET {{baseUrl}}/api/v1/openapi.yaml
+
+### Catalogue and meta / Check health
+# Liveness check. Not versioned and not rate limited.
+GET {{baseUrl}}/healthz
+
+### Errors / 400 Bad Request / Missing operation
+# INVALID_REQUEST with errors[0].field set to operation. See docs/ERROR-CONTRACT.md for every code.
+POST {{baseUrl}}/api/v1/calculations
+Content-Type: application/json
+
+{"operands":[1,2]}
+
+### Errors / 400 Bad Request / Non-numeric operand
+# INVALID_REQUEST with errors[0].field set to operands.
+POST {{baseUrl}}/api/v1/calculations
+Content-Type: application/json
+
+{"operation":"add","operands":[1,"2"]}
+
+### Errors / 400 Bad Request / Wrong operand count
+# INVALID_OPERAND_COUNT. The message reads "add needs 2 operands, got 1."
+POST {{baseUrl}}/api/v1/calculations
+Content-Type: application/json
+
+{"operation":"add","operands":[1]}
+
+### Errors / 400 Bad Request / Malformed JSON
+# INVALID_JSON. The body is a lone opening brace.
+POST {{baseUrl}}/api/v1/calculations
+Content-Type: application/json
+
+{
+
+### Errors / 422 Unprocessable Entity / Division by zero
+# DIVISION_BY_ZERO. Shape errors are 400, rule errors are 422.
+POST {{baseUrl}}/api/v1/calculations
+Content-Type: application/json
+
+{"operation":"divide","operands":[5,0]}
+
+### Errors / 422 Unprocessable Entity / Square root of a negative number
+# NEGATIVE_SQUARE_ROOT.
+POST {{baseUrl}}/api/v1/calculations
+Content-Type: application/json
+
+{"operation":"sqrt","operands":[-4]}
+
+### Errors / 422 Unprocessable Entity / Undefined power result
+# UNDEFINED_RESULT. A negative base with a fractional exponent has no real answer.
+POST {{baseUrl}}/api/v1/calculations
+Content-Type: application/json
+
+{"operation":"power","operands":[-8,0.5]}
+
+### Errors / 422 Unprocessable Entity / Result out of range
+# RESULT_OUT_OF_RANGE. The product is larger than the biggest float64.
+POST {{baseUrl}}/api/v1/calculations
+Content-Type: application/json
+
+{"operation":"multiply","operands":[1e+308,10]}
+
+### Errors / 422 Unprocessable Entity / Unknown operation in the body
+# UNKNOWN_OPERATION from the body route. errors[0].message lists the valid names.
+POST {{baseUrl}}/api/v1/calculations
+Content-Type: application/json
+
+{"operation":"modulo","operands":[7,3]}
+
+### Errors / 404 Not Found / Unknown route
+# NOT_FOUND from the router, still Problem Details.
+GET {{baseUrl}}/api/v1/nothing
+
+### Errors / 404 Not Found / Unknown operation in the path
+# UNKNOWN_OPERATION from the path route. A name in a URL is a missing resource, so it is 404 here and 422 in the body.
+POST {{baseUrl}}/api/v1/operations/modulo
+Content-Type: application/json
+
+{"operands":[7,3]}
+
+### Errors / 405 Method Not Allowed / PUT on the calculations endpoint
+# METHOD_NOT_ALLOWED. The Allow header lists POST.
+PUT {{baseUrl}}/api/v1/calculations
+Content-Type: application/json
+
+{"operation":"add","operands":[2,3]}
+
+### Errors / 405 Method Not Allowed / DELETE on the operations catalogue
+# METHOD_NOT_ALLOWED. The Allow header lists GET.
+DELETE {{baseUrl}}/api/v1/operations
+
+### Errors / 415 Unsupported Media Type / Wrong content type
+# UNSUPPORTED_MEDIA_TYPE. The endpoint accepts only application/json.
+POST {{baseUrl}}/api/v1/calculations
+Content-Type: text/plain
+
+2+3

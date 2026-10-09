@@ -1,0 +1,1792 @@
+{
+  "info": {
+    "name": "Calculator API",
+    "description": "Requests for the calculator service v1.0.0. Start the service with `npm run dev` or `docker compose up`, then run the collection. Every request has tests for the status and the key fields. Change the baseUrl variable to point at another host.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Calculations",
+      "item": [
+        {
+          "name": "Add two numbers",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The response carries an X-Request-Id\", function () {",
+                  "  pm.expect(pm.response.headers.get(\"X-Request-Id\")).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "pm.test(\"Content-Type is application/json\", function () {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+                  "});",
+                  "pm.test(\"The result is 5\", function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.operation).to.eql(\"add\");",
+                  "  pm.expect(body.operands).to.eql([2,3]);",
+                  "  pm.expect(body.result).to.eql(5);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/calculations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "calculations"
+              ]
+            },
+            "description": "Runs add through the resource endpoint. Expects 200 and 5.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operation\": \"add\",\n  \"operands\": [\n    2,\n    3\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Subtract",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The response carries an X-Request-Id\", function () {",
+                  "  pm.expect(pm.response.headers.get(\"X-Request-Id\")).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "pm.test(\"Content-Type is application/json\", function () {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+                  "});",
+                  "pm.test(\"The result is 6\", function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.operation).to.eql(\"subtract\");",
+                  "  pm.expect(body.operands).to.eql([10,4]);",
+                  "  pm.expect(body.result).to.eql(6);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/calculations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "calculations"
+              ]
+            },
+            "description": "Runs subtract through the resource endpoint. Expects 200 and 6.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operation\": \"subtract\",\n  \"operands\": [\n    10,\n    4\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Multiply",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The response carries an X-Request-Id\", function () {",
+                  "  pm.expect(pm.response.headers.get(\"X-Request-Id\")).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "pm.test(\"Content-Type is application/json\", function () {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+                  "});",
+                  "pm.test(\"The result is 42\", function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.operation).to.eql(\"multiply\");",
+                  "  pm.expect(body.operands).to.eql([6,7]);",
+                  "  pm.expect(body.result).to.eql(42);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/calculations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "calculations"
+              ]
+            },
+            "description": "Runs multiply through the resource endpoint. Expects 200 and 42.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operation\": \"multiply\",\n  \"operands\": [\n    6,\n    7\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Divide",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The response carries an X-Request-Id\", function () {",
+                  "  pm.expect(pm.response.headers.get(\"X-Request-Id\")).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "pm.test(\"Content-Type is application/json\", function () {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+                  "});",
+                  "pm.test(\"The result is 2.5\", function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.operation).to.eql(\"divide\");",
+                  "  pm.expect(body.operands).to.eql([10,4]);",
+                  "  pm.expect(body.result).to.eql(2.5);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/calculations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "calculations"
+              ]
+            },
+            "description": "Runs divide through the resource endpoint. Expects 200 and 2.5.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operation\": \"divide\",\n  \"operands\": [\n    10,\n    4\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Raise to a power",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The response carries an X-Request-Id\", function () {",
+                  "  pm.expect(pm.response.headers.get(\"X-Request-Id\")).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "pm.test(\"Content-Type is application/json\", function () {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+                  "});",
+                  "pm.test(\"The result is 1024\", function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.operation).to.eql(\"power\");",
+                  "  pm.expect(body.operands).to.eql([2,10]);",
+                  "  pm.expect(body.result).to.eql(1024);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/calculations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "calculations"
+              ]
+            },
+            "description": "Runs power through the resource endpoint. Expects 200 and 1024.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operation\": \"power\",\n  \"operands\": [\n    2,\n    10\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Square root",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The response carries an X-Request-Id\", function () {",
+                  "  pm.expect(pm.response.headers.get(\"X-Request-Id\")).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "pm.test(\"Content-Type is application/json\", function () {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+                  "});",
+                  "pm.test(\"The result is 3\", function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.operation).to.eql(\"sqrt\");",
+                  "  pm.expect(body.operands).to.eql([9]);",
+                  "  pm.expect(body.result).to.eql(3);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/calculations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "calculations"
+              ]
+            },
+            "description": "Runs sqrt through the resource endpoint. Expects 200 and 3.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operation\": \"sqrt\",\n  \"operands\": [\n    9\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Percentage, 15 percent of 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The response carries an X-Request-Id\", function () {",
+                  "  pm.expect(pm.response.headers.get(\"X-Request-Id\")).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "pm.test(\"Content-Type is application/json\", function () {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+                  "});",
+                  "pm.test(\"The result is 30\", function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.operation).to.eql(\"percentage\");",
+                  "  pm.expect(body.operands).to.eql([15,200]);",
+                  "  pm.expect(body.result).to.eql(30);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/calculations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "calculations"
+              ]
+            },
+            "description": "Runs percentage through the resource endpoint. Expects 200 and 30.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operation\": \"percentage\",\n  \"operands\": [\n    15,\n    200\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reciprocal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The response carries an X-Request-Id\", function () {",
+                  "  pm.expect(pm.response.headers.get(\"X-Request-Id\")).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "pm.test(\"Content-Type is application/json\", function () {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+                  "});",
+                  "pm.test(\"The result is 0.25\", function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.operation).to.eql(\"reciprocal\");",
+                  "  pm.expect(body.operands).to.eql([4]);",
+                  "  pm.expect(body.result).to.eql(0.25);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/calculations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "calculations"
+              ]
+            },
+            "description": "Runs reciprocal through the resource endpoint. Expects 200 and 0.25.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operation\": \"reciprocal\",\n  \"operands\": [\n    4\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Square of a negative number",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The response carries an X-Request-Id\", function () {",
+                  "  pm.expect(pm.response.headers.get(\"X-Request-Id\")).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "pm.test(\"Content-Type is application/json\", function () {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+                  "});",
+                  "pm.test(\"The result is 9\", function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.operation).to.eql(\"square\");",
+                  "  pm.expect(body.operands).to.eql([-3]);",
+                  "  pm.expect(body.result).to.eql(9);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/calculations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "calculations"
+              ]
+            },
+            "description": "Runs square through the resource endpoint. Expects 200 and 9.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operation\": \"square\",\n  \"operands\": [\n    -3\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Rounding removes float noise",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The response carries an X-Request-Id\", function () {",
+                  "  pm.expect(pm.response.headers.get(\"X-Request-Id\")).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "pm.test(\"Content-Type is application/json\", function () {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+                  "});",
+                  "pm.test(\"The result is 0.3\", function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.operation).to.eql(\"add\");",
+                  "  pm.expect(body.operands).to.eql([0.1,0.2]);",
+                  "  pm.expect(body.result).to.eql(0.3);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/calculations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "calculations"
+              ]
+            },
+            "description": "Runs add through the resource endpoint. Expects 200 and 0.3.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operation\": \"add\",\n  \"operands\": [\n    0.1,\n    0.2\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Operation routes",
+      "item": [
+        {
+          "name": "Add through the operation route",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The response carries an X-Request-Id\", function () {",
+                  "  pm.expect(pm.response.headers.get(\"X-Request-Id\")).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "pm.test(\"Content-Type is application/json\", function () {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+                  "});",
+                  "pm.test(\"The result is 5\", function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.operation).to.eql(\"add\");",
+                  "  pm.expect(body.operands).to.eql([2,3]);",
+                  "  pm.expect(body.result).to.eql(5);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/operations/add",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "operations",
+                "add"
+              ]
+            },
+            "description": "Same answer as the resource endpoint. The operation comes from the path.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operands\": [\n    2,\n    3\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Divide through the operation route",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The response carries an X-Request-Id\", function () {",
+                  "  pm.expect(pm.response.headers.get(\"X-Request-Id\")).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "pm.test(\"Content-Type is application/json\", function () {",
+                  "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");",
+                  "});",
+                  "pm.test(\"The result is 2.5\", function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.operation).to.eql(\"divide\");",
+                  "  pm.expect(body.operands).to.eql([10,4]);",
+                  "  pm.expect(body.result).to.eql(2.5);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/operations/divide",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "operations",
+                "divide"
+              ]
+            },
+            "description": "Expects 200 and 2.5.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operands\": [\n    10,\n    4\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Catalogue and meta",
+      "item": [
+        {
+          "name": "List operations",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The response carries an X-Request-Id\", function () {",
+                  "  pm.expect(pm.response.headers.get(\"X-Request-Id\")).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "pm.test(\"The catalogue lists the nine operations in order\", function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.total).to.eql(9);",
+                  "  pm.expect(body.items.map((item) => item.name)).to.eql([",
+                  "    \"add\", \"subtract\", \"multiply\", \"divide\", \"power\", \"sqrt\", \"percentage\", \"reciprocal\", \"square\",",
+                  "  ]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/operations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "operations"
+              ]
+            },
+            "description": "Returns the nine operations in a fixed order."
+          },
+          "response": []
+        },
+        {
+          "name": "Get the OpenAPI document",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The response carries an X-Request-Id\", function () {",
+                  "  pm.expect(pm.response.headers.get(\"X-Request-Id\")).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "pm.test(\"The body is the OpenAPI 3.0.3 document for version 1.0.0\", function () {",
+                  "  const text = pm.response.text();",
+                  "  pm.expect(text).to.include(\"openapi: 3.0.3\");",
+                  "  pm.expect(text).to.include(\"title: Calculator API\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/openapi.yaml",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "openapi.yaml"
+              ]
+            },
+            "description": "Serves the exact file the backend was built with."
+          },
+          "response": []
+        },
+        {
+          "name": "Check health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status is 200\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"The response carries an X-Request-Id\", function () {",
+                  "  pm.expect(pm.response.headers.get(\"X-Request-Id\")).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "pm.test(\"The service reports ok and version 1.0.0\", function () {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.status).to.eql(\"ok\");",
+                  "  pm.expect(body.version).to.eql(\"1.0.0\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/healthz",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "healthz"
+              ]
+            },
+            "description": "Liveness check. Not versioned and not rate limited."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Errors",
+      "item": [
+        {
+          "name": "400 Bad Request",
+          "item": [
+            {
+              "name": "Missing operation",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status is 400\", function () {",
+                      "  pm.response.to.have.status(400);",
+                      "});",
+                      "pm.test(\"The response carries an X-Request-Id\", function () {",
+                      "  pm.expect(pm.response.headers.get(\"X-Request-Id\")).to.be.a(\"string\").and.not.empty;",
+                      "});",
+                      "pm.test(\"Content-Type is application/problem+json\", function () {",
+                      "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/problem+json\");",
+                      "});",
+                      "pm.test(\"The problem code is INVALID_REQUEST\", function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.code).to.eql(\"INVALID_REQUEST\");",
+                      "  pm.expect(body.status).to.eql(400);",
+                      "  pm.expect(body.type).to.eql(\"about:blank\");",
+                      "  pm.expect(body.instance).to.eql(\"/api/v1/calculations\");",
+                      "  pm.expect(body.detail).to.be.a(\"string\").and.not.empty;",
+                      "  pm.expect(body.requestId).to.eql(pm.response.headers.get(\"X-Request-Id\"));",
+                      "});",
+                      "pm.test(\"errors[0].field is operation\", function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.errors).to.be.an(\"array\").with.lengthOf.at.least(1);",
+                      "  pm.expect(body.errors[0].field).to.eql(\"operation\");",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/calculations",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "calculations"
+                  ]
+                },
+                "description": "INVALID_REQUEST with errors[0].field set to operation. See docs/ERROR-CONTRACT.md for every code.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"operands\": [\n    1,\n    2\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Non-numeric operand",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status is 400\", function () {",
+                      "  pm.response.to.have.status(400);",
+                      "});",
+                      "pm.test(\"The response carries an X-Request-Id\", function () {",
+                      "  pm.expect(pm.response.headers.get(\"X-Request-Id\")).to.be.a(\"string\").and.not.empty;",
+                      "});",
+                      "pm.test(\"Content-Type is application/problem+json\", function () {",
+                      "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/problem+json\");",
+                      "});",
+                      "pm.test(\"The problem code is INVALID_REQUEST\", function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.code).to.eql(\"INVALID_REQUEST\");",
+                      "  pm.expect(body.status).to.eql(400);",
+                      "  pm.expect(body.type).to.eql(\"about:blank\");",
+                      "  pm.expect(body.instance).to.eql(\"/api/v1/calculations\");",
+                      "  pm.expect(body.detail).to.be.a(\"string\").and.not.empty;",
+                      "  pm.expect(body.requestId).to.eql(pm.response.headers.get(\"X-Request-Id\"));",
+                      "});",
+                      "pm.test(\"errors[0].field is operands\", function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.errors).to.be.an(\"array\").with.lengthOf.at.least(1);",
+                      "  pm.expect(body.errors[0].field).to.eql(\"operands\");",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/calculations",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "calculations"
+                  ]
+                },
+                "description": "INVALID_REQUEST with errors[0].field set to operands.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"operation\": \"add\",\n  \"operands\": [\n    1,\n    \"2\"\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Wrong operand count",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status is 400\", function () {",
+                      "  pm.response.to.have.status(400);",
+                      "});",
+                      "pm.test(\"The response carries an X-Request-Id\", function () {",
+                      "  pm.expect(pm.response.headers.get(\"X-Request-Id\")).to.be.a(\"string\").and.not.empty;",
+                      "});",
+                      "pm.test(\"Content-Type is application/problem+json\", function () {",
+                      "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/problem+json\");",
+                      "});",
+                      "pm.test(\"The problem code is INVALID_OPERAND_COUNT\", function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.code).to.eql(\"INVALID_OPERAND_COUNT\");",
+                      "  pm.expect(body.status).to.eql(400);",
+                      "  pm.expect(body.type).to.eql(\"about:blank\");",
+                      "  pm.expect(body.instance).to.eql(\"/api/v1/calculations\");",
+                      "  pm.expect(body.detail).to.be.a(\"string\").and.not.empty;",
+                      "  pm.expect(body.requestId).to.eql(pm.response.headers.get(\"X-Request-Id\"));",
+                      "});",
+                      "pm.test(\"errors[0].field is operands\", function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.errors).to.be.an(\"array\").with.lengthOf.at.least(1);",
+                      "  pm.expect(body.errors[0].field).to.eql(\"operands\");",
+                      "  pm.expect(body.errors[0].message).to.eql(\"add needs 2 operands, got 1.\");",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/calculations",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "calculations"
+                  ]
+                },
+                "description": "INVALID_OPERAND_COUNT. The message reads \"add needs 2 operands, got 1.\"",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"operation\": \"add\",\n  \"operands\": [\n    1\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Malformed JSON",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status is 400\", function () {",
+                      "  pm.response.to.have.status(400);",
+                      "});",
+                      "pm.test(\"The response carries an X-Request-Id\", function () {",
+                      "  pm.expect(pm.response.headers.get(\"X-Request-Id\")).to.be.a(\"string\").and.not.empty;",
+                      "});",
+                      "pm.test(\"Content-Type is application/problem+json\", function () {",
+                      "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/problem+json\");",
+                      "});",
+                      "pm.test(\"The problem code is INVALID_JSON\", function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.code).to.eql(\"INVALID_JSON\");",
+                      "  pm.expect(body.status).to.eql(400);",
+                      "  pm.expect(body.type).to.eql(\"about:blank\");",
+                      "  pm.expect(body.instance).to.eql(\"/api/v1/calculations\");",
+                      "  pm.expect(body.detail).to.be.a(\"string\").and.not.empty;",
+                      "  pm.expect(body.requestId).to.eql(pm.response.headers.get(\"X-Request-Id\"));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/calculations",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "calculations"
+                  ]
+                },
+                "description": "INVALID_JSON. The body is a lone opening brace.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "422 Unprocessable Entity",
+          "item": [
+            {
+              "name": "Division by zero",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status is 422\", function () {",
+                      "  pm.response.to.have.status(422);",
+                      "});",
+                      "pm.test(\"The response carries an X-Request-Id\", function () {",
+                      "  pm.expect(pm.response.headers.get(\"X-Request-Id\")).to.be.a(\"string\").and.not.empty;",
+                      "});",
+                      "pm.test(\"Content-Type is application/problem+json\", function () {",
+                      "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/problem+json\");",
+                      "});",
+                      "pm.test(\"The problem code is DIVISION_BY_ZERO\", function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.code).to.eql(\"DIVISION_BY_ZERO\");",
+                      "  pm.expect(body.status).to.eql(422);",
+                      "  pm.expect(body.type).to.eql(\"about:blank\");",
+                      "  pm.expect(body.instance).to.eql(\"/api/v1/calculations\");",
+                      "  pm.expect(body.detail).to.be.a(\"string\").and.not.empty;",
+                      "  pm.expect(body.requestId).to.eql(pm.response.headers.get(\"X-Request-Id\"));",
+                      "});",
+                      "pm.test(\"The detail text matches the contract\", function () {",
+                      "  pm.expect(pm.response.json().detail).to.eql(\"Division by zero is undefined.\");",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/calculations",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "calculations"
+                  ]
+                },
+                "description": "DIVISION_BY_ZERO. Shape errors are 400, rule errors are 422.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"operation\": \"divide\",\n  \"operands\": [\n    5,\n    0\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Square root of a negative number",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status is 422\", function () {",
+                      "  pm.response.to.have.status(422);",
+                      "});",
+                      "pm.test(\"The response carries an X-Request-Id\", function () {",
+                      "  pm.expect(pm.response.headers.get(\"X-Request-Id\")).to.be.a(\"string\").and.not.empty;",
+                      "});",
+                      "pm.test(\"Content-Type is application/problem+json\", function () {",
+                      "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/problem+json\");",
+                      "});",
+                      "pm.test(\"The problem code is NEGATIVE_SQUARE_ROOT\", function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.code).to.eql(\"NEGATIVE_SQUARE_ROOT\");",
+                      "  pm.expect(body.status).to.eql(422);",
+                      "  pm.expect(body.type).to.eql(\"about:blank\");",
+                      "  pm.expect(body.instance).to.eql(\"/api/v1/calculations\");",
+                      "  pm.expect(body.detail).to.be.a(\"string\").and.not.empty;",
+                      "  pm.expect(body.requestId).to.eql(pm.response.headers.get(\"X-Request-Id\"));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/calculations",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "calculations"
+                  ]
+                },
+                "description": "NEGATIVE_SQUARE_ROOT.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"operation\": \"sqrt\",\n  \"operands\": [\n    -4\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Undefined power result",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status is 422\", function () {",
+                      "  pm.response.to.have.status(422);",
+                      "});",
+                      "pm.test(\"The response carries an X-Request-Id\", function () {",
+                      "  pm.expect(pm.response.headers.get(\"X-Request-Id\")).to.be.a(\"string\").and.not.empty;",
+                      "});",
+                      "pm.test(\"Content-Type is application/problem+json\", function () {",
+                      "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/problem+json\");",
+                      "});",
+                      "pm.test(\"The problem code is UNDEFINED_RESULT\", function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.code).to.eql(\"UNDEFINED_RESULT\");",
+                      "  pm.expect(body.status).to.eql(422);",
+                      "  pm.expect(body.type).to.eql(\"about:blank\");",
+                      "  pm.expect(body.instance).to.eql(\"/api/v1/calculations\");",
+                      "  pm.expect(body.detail).to.be.a(\"string\").and.not.empty;",
+                      "  pm.expect(body.requestId).to.eql(pm.response.headers.get(\"X-Request-Id\"));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/calculations",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "calculations"
+                  ]
+                },
+                "description": "UNDEFINED_RESULT. A negative base with a fractional exponent has no real answer.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"operation\": \"power\",\n  \"operands\": [\n    -8,\n    0.5\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Result out of range",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status is 422\", function () {",
+                      "  pm.response.to.have.status(422);",
+                      "});",
+                      "pm.test(\"The response carries an X-Request-Id\", function () {",
+                      "  pm.expect(pm.response.headers.get(\"X-Request-Id\")).to.be.a(\"string\").and.not.empty;",
+                      "});",
+                      "pm.test(\"Content-Type is application/problem+json\", function () {",
+                      "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/problem+json\");",
+                      "});",
+                      "pm.test(\"The problem code is RESULT_OUT_OF_RANGE\", function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.code).to.eql(\"RESULT_OUT_OF_RANGE\");",
+                      "  pm.expect(body.status).to.eql(422);",
+                      "  pm.expect(body.type).to.eql(\"about:blank\");",
+                      "  pm.expect(body.instance).to.eql(\"/api/v1/calculations\");",
+                      "  pm.expect(body.detail).to.be.a(\"string\").and.not.empty;",
+                      "  pm.expect(body.requestId).to.eql(pm.response.headers.get(\"X-Request-Id\"));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/calculations",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "calculations"
+                  ]
+                },
+                "description": "RESULT_OUT_OF_RANGE. The product is larger than the biggest float64.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"operation\": \"multiply\",\n  \"operands\": [\n    1e+308,\n    10\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Unknown operation in the body",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status is 422\", function () {",
+                      "  pm.response.to.have.status(422);",
+                      "});",
+                      "pm.test(\"The response carries an X-Request-Id\", function () {",
+                      "  pm.expect(pm.response.headers.get(\"X-Request-Id\")).to.be.a(\"string\").and.not.empty;",
+                      "});",
+                      "pm.test(\"Content-Type is application/problem+json\", function () {",
+                      "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/problem+json\");",
+                      "});",
+                      "pm.test(\"The problem code is UNKNOWN_OPERATION\", function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.code).to.eql(\"UNKNOWN_OPERATION\");",
+                      "  pm.expect(body.status).to.eql(422);",
+                      "  pm.expect(body.type).to.eql(\"about:blank\");",
+                      "  pm.expect(body.instance).to.eql(\"/api/v1/calculations\");",
+                      "  pm.expect(body.detail).to.be.a(\"string\").and.not.empty;",
+                      "  pm.expect(body.requestId).to.eql(pm.response.headers.get(\"X-Request-Id\"));",
+                      "});",
+                      "pm.test(\"The detail text matches the contract\", function () {",
+                      "  pm.expect(pm.response.json().detail).to.eql(\"Unknown operation \\\"modulo\\\".\");",
+                      "});",
+                      "pm.test(\"errors[0].field is operation\", function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.errors).to.be.an(\"array\").with.lengthOf.at.least(1);",
+                      "  pm.expect(body.errors[0].field).to.eql(\"operation\");",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/calculations",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "calculations"
+                  ]
+                },
+                "description": "UNKNOWN_OPERATION from the body route. errors[0].message lists the valid names.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"operation\": \"modulo\",\n  \"operands\": [\n    7,\n    3\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "404 Not Found",
+          "item": [
+            {
+              "name": "Unknown route",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status is 404\", function () {",
+                      "  pm.response.to.have.status(404);",
+                      "});",
+                      "pm.test(\"The response carries an X-Request-Id\", function () {",
+                      "  pm.expect(pm.response.headers.get(\"X-Request-Id\")).to.be.a(\"string\").and.not.empty;",
+                      "});",
+                      "pm.test(\"Content-Type is application/problem+json\", function () {",
+                      "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/problem+json\");",
+                      "});",
+                      "pm.test(\"The problem code is NOT_FOUND\", function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.code).to.eql(\"NOT_FOUND\");",
+                      "  pm.expect(body.status).to.eql(404);",
+                      "  pm.expect(body.type).to.eql(\"about:blank\");",
+                      "  pm.expect(body.instance).to.eql(\"/api/v1/nothing\");",
+                      "  pm.expect(body.detail).to.be.a(\"string\").and.not.empty;",
+                      "  pm.expect(body.requestId).to.eql(pm.response.headers.get(\"X-Request-Id\"));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/nothing",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "nothing"
+                  ]
+                },
+                "description": "NOT_FOUND from the router, still Problem Details."
+              },
+              "response": []
+            },
+            {
+              "name": "Unknown operation in the path",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status is 404\", function () {",
+                      "  pm.response.to.have.status(404);",
+                      "});",
+                      "pm.test(\"The response carries an X-Request-Id\", function () {",
+                      "  pm.expect(pm.response.headers.get(\"X-Request-Id\")).to.be.a(\"string\").and.not.empty;",
+                      "});",
+                      "pm.test(\"Content-Type is application/problem+json\", function () {",
+                      "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/problem+json\");",
+                      "});",
+                      "pm.test(\"The problem code is UNKNOWN_OPERATION\", function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.code).to.eql(\"UNKNOWN_OPERATION\");",
+                      "  pm.expect(body.status).to.eql(404);",
+                      "  pm.expect(body.type).to.eql(\"about:blank\");",
+                      "  pm.expect(body.instance).to.eql(\"/api/v1/operations/modulo\");",
+                      "  pm.expect(body.detail).to.be.a(\"string\").and.not.empty;",
+                      "  pm.expect(body.requestId).to.eql(pm.response.headers.get(\"X-Request-Id\"));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/operations/modulo",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "operations",
+                    "modulo"
+                  ]
+                },
+                "description": "UNKNOWN_OPERATION from the path route. A name in a URL is a missing resource, so it is 404 here and 422 in the body.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"operands\": [\n    7,\n    3\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "405 Method Not Allowed",
+          "item": [
+            {
+              "name": "PUT on the calculations endpoint",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status is 405\", function () {",
+                      "  pm.response.to.have.status(405);",
+                      "});",
+                      "pm.test(\"The response carries an X-Request-Id\", function () {",
+                      "  pm.expect(pm.response.headers.get(\"X-Request-Id\")).to.be.a(\"string\").and.not.empty;",
+                      "});",
+                      "pm.test(\"Content-Type is application/problem+json\", function () {",
+                      "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/problem+json\");",
+                      "});",
+                      "pm.test(\"The problem code is METHOD_NOT_ALLOWED\", function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.code).to.eql(\"METHOD_NOT_ALLOWED\");",
+                      "  pm.expect(body.status).to.eql(405);",
+                      "  pm.expect(body.type).to.eql(\"about:blank\");",
+                      "  pm.expect(body.instance).to.eql(\"/api/v1/calculations\");",
+                      "  pm.expect(body.detail).to.be.a(\"string\").and.not.empty;",
+                      "  pm.expect(body.requestId).to.eql(pm.response.headers.get(\"X-Request-Id\"));",
+                      "});",
+                      "pm.test(\"The Allow header is POST\", function () {",
+                      "  pm.expect(pm.response.headers.get(\"Allow\")).to.eql(\"POST\");",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/calculations",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "calculations"
+                  ]
+                },
+                "description": "METHOD_NOT_ALLOWED. The Allow header lists POST.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"operation\": \"add\",\n  \"operands\": [\n    2,\n    3\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "DELETE on the operations catalogue",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status is 405\", function () {",
+                      "  pm.response.to.have.status(405);",
+                      "});",
+                      "pm.test(\"The response carries an X-Request-Id\", function () {",
+                      "  pm.expect(pm.response.headers.get(\"X-Request-Id\")).to.be.a(\"string\").and.not.empty;",
+                      "});",
+                      "pm.test(\"Content-Type is application/problem+json\", function () {",
+                      "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/problem+json\");",
+                      "});",
+                      "pm.test(\"The problem code is METHOD_NOT_ALLOWED\", function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.code).to.eql(\"METHOD_NOT_ALLOWED\");",
+                      "  pm.expect(body.status).to.eql(405);",
+                      "  pm.expect(body.type).to.eql(\"about:blank\");",
+                      "  pm.expect(body.instance).to.eql(\"/api/v1/operations\");",
+                      "  pm.expect(body.detail).to.be.a(\"string\").and.not.empty;",
+                      "  pm.expect(body.requestId).to.eql(pm.response.headers.get(\"X-Request-Id\"));",
+                      "});",
+                      "pm.test(\"The Allow header is GET\", function () {",
+                      "  pm.expect(pm.response.headers.get(\"Allow\")).to.eql(\"GET\");",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/operations",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "operations"
+                  ]
+                },
+                "description": "METHOD_NOT_ALLOWED. The Allow header lists GET."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "415 Unsupported Media Type",
+          "item": [
+            {
+              "name": "Wrong content type",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status is 415\", function () {",
+                      "  pm.response.to.have.status(415);",
+                      "});",
+                      "pm.test(\"The response carries an X-Request-Id\", function () {",
+                      "  pm.expect(pm.response.headers.get(\"X-Request-Id\")).to.be.a(\"string\").and.not.empty;",
+                      "});",
+                      "pm.test(\"Content-Type is application/problem+json\", function () {",
+                      "  pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/problem+json\");",
+                      "});",
+                      "pm.test(\"The problem code is UNSUPPORTED_MEDIA_TYPE\", function () {",
+                      "  const body = pm.response.json();",
+                      "  pm.expect(body.code).to.eql(\"UNSUPPORTED_MEDIA_TYPE\");",
+                      "  pm.expect(body.status).to.eql(415);",
+                      "  pm.expect(body.type).to.eql(\"about:blank\");",
+                      "  pm.expect(body.instance).to.eql(\"/api/v1/calculations\");",
+                      "  pm.expect(body.detail).to.be.a(\"string\").and.not.empty;",
+                      "  pm.expect(body.requestId).to.eql(pm.response.headers.get(\"X-Request-Id\"));",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "text/plain",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/calculations",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "calculations"
+                  ]
+                },
+                "description": "UNSUPPORTED_MEDIA_TYPE. The endpoint accepts only application/json.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "2+3",
+                  "options": {
+                    "raw": {
+                      "language": "text"
+                    }
+                  }
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    }
+  ]
+}

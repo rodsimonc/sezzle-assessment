@@ -1,0 +1,51 @@
+flowchart TD
+  req(["Incoming request"]):::start
+
+  rate{"Over the rate limit?"}:::check
+  route{"Known path and method?"}:::check
+  media{"Content-Type is<br/>application/json?"}:::check
+  size{"Body is 4096 bytes<br/>or smaller?"}:::check
+  syntax{"Body is valid JSON?"}:::check
+  shape{"Right shape and types?"}:::check
+  known{"Known operation name?"}:::check
+  count{"Right operand count?"}:::check
+  rules{"Arithmetic allowed?"}:::check
+
+  e429["429 RATE_LIMITED<br/>Retry-After header"]:::client
+  e404["404 NOT_FOUND<br/>405 METHOD_NOT_ALLOWED with Allow<br/>404 UNKNOWN_OPERATION for an unknown /operations/name"]:::client
+  e415["415 UNSUPPORTED_MEDIA_TYPE"]:::client
+  e413["413 PAYLOAD_TOO_LARGE"]:::client
+  e400a["400 INVALID_JSON"]:::client
+  e400b["400 INVALID_REQUEST<br/>errors names the field"]:::client
+  e422a["422 UNKNOWN_OPERATION<br/>lists the valid names"]:::client
+  e400c["400 INVALID_OPERAND_COUNT"]:::client
+  e422b["422 DIVISION_BY_ZERO<br/>NEGATIVE_SQUARE_ROOT<br/>UNDEFINED_RESULT<br/>RESULT_OUT_OF_RANGE"]:::client
+  ok["200 result in application/json"]:::good
+  e500["500 INTERNAL_ERROR<br/>a recovered panic, any step"]:::server
+
+  req --> rate
+  rate -->|"yes"| e429
+  rate -->|"no"| route
+  route -->|"no"| e404
+  route -->|"yes"| media
+  media -->|"no"| e415
+  media -->|"yes"| size
+  size -->|"no"| e413
+  size -->|"yes"| syntax
+  syntax -->|"no"| e400a
+  syntax -->|"yes"| shape
+  shape -->|"no"| e400b
+  shape -->|"yes"| known
+  known -->|"no"| e422a
+  known -->|"yes"| count
+  count -->|"no"| e400c
+  count -->|"yes"| rules
+  rules -->|"no"| e422b
+  rules -->|"yes"| ok
+  req -.-> e500
+
+  classDef start fill:#f3f4f6,stroke:#6b7280,color:#111827
+  classDef check fill:#dbeafe,stroke:#2563eb,color:#111827
+  classDef client fill:#fef3c7,stroke:#d97706,color:#111827
+  classDef server fill:#fee2e2,stroke:#dc2626,color:#111827
+  classDef good fill:#dcfce7,stroke:#16a34a,color:#111827

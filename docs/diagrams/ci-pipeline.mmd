@@ -1,0 +1,32 @@
+flowchart LR
+  trigger(["Push or pull request on main"]):::start
+
+  backend["backend<br/>gofmt, go vet, golangci-lint v2.14.0<br/>tests with the 90% gate<br/>govulncheck v1.8.0"]:::job
+  frontend["frontend<br/>ESLint, Prettier, tsc<br/>tests with the 80% gate<br/>build, npm audit"]:::job
+  docs["docs<br/>writing style and links<br/>script tests"]:::job
+  evals["evals: the merge gate<br/>build, Playwright API and UI evals<br/>eval coverage, mutation audit"]:::gate
+  docker["docker<br/>build image, wait for healthy<br/>API evals against the container<br/>SIGTERM exits with 0"]:::job
+  merge{{"All required checks green:<br/>merge allowed"}}:::done
+
+  reports[("Artifacts<br/>coverage reports<br/>Playwright report")]:::artifact
+
+  trigger --> backend
+  trigger --> frontend
+  trigger --> docs
+  backend -->|"needs"| evals
+  frontend -->|"needs"| evals
+  backend -->|"needs"| docker
+  frontend -->|"needs"| docker
+  evals --> merge
+  docker --> merge
+  docs --> merge
+
+  backend -.-> reports
+  frontend -.-> reports
+  evals -.-> reports
+
+  classDef start fill:#f3f4f6,stroke:#6b7280,color:#111827
+  classDef job fill:#dbeafe,stroke:#2563eb,color:#111827
+  classDef gate fill:#fef3c7,stroke:#d97706,color:#111827,stroke-width:3px
+  classDef done fill:#dcfce7,stroke:#16a34a,color:#111827
+  classDef artifact fill:#e0e7ff,stroke:#4f46e5,color:#111827

@@ -1,0 +1,44 @@
+flowchart LR
+  subgraph concepcion["Concepción"]
+    direction TB
+    specs["specs.md<br/>stack, structure, closed decisions"]:::doc
+    release["releases/v1.0.0.md<br/>requirements with golden cases"]:::doc
+    evalfiles["Eval files<br/>written from the golden cases<br/>before any code"]:::doc
+    specs --> release --> evalfiles
+  end
+
+  gate1{{"Gate 1<br/>owner approves the contract"}}:::gate
+
+  subgraph construccion["Construcción"]
+    direction TB
+    impl["Implement<br/>backend and frontend"]:::work
+    unit["Unit tests<br/>and coverage gates"]:::work
+    run["Run the evals"]:::work
+    impl --> unit --> run
+    run -->|"a red eval"| impl
+  end
+
+  gate2{{"Gate 2<br/>every eval green<br/>coverage table at 100%<br/>audit caught every break"}}:::gate
+
+  subgraph operacion["Operación"]
+    direction TB
+    version["Version check<br/>1.0.0 in every file"]:::ship
+    tag["CHANGELOG entry<br/>tag v1.0.0"]:::ship
+    version --> tag
+  end
+
+  arbiter(["Eval suite<br/>the arbiter of done"]):::arbiter
+  audit["Mutation audit<br/>breaks a copy of the backend<br/>and checks the evals notice"]:::arbiter
+
+  concepcion --> gate1 --> construccion --> gate2 --> operacion
+  arbiter -.-> run
+  audit -.->|"proves the evals can fail"| arbiter
+
+  classDef doc fill:#dbeafe,stroke:#2563eb,color:#111827
+  classDef work fill:#dcfce7,stroke:#16a34a,color:#111827
+  classDef ship fill:#e0e7ff,stroke:#4f46e5,color:#111827
+  classDef gate fill:#fef3c7,stroke:#d97706,color:#111827,stroke-width:3px
+  classDef arbiter fill:#fee2e2,stroke:#dc2626,color:#111827
+  style concepcion fill:#ffffff,stroke:#2563eb,color:#111827
+  style construccion fill:#ffffff,stroke:#16a34a,color:#111827
+  style operacion fill:#ffffff,stroke:#4f46e5,color:#111827
