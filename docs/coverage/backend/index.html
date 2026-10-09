@@ -55,7 +55,7 @@
 			<div id="nav">
 				<select id="files">
 				
-				<option value="file0">calculator/cmd/server/main.go (97.6%)</option>
+				<option value="file0">calculator/cmd/server/main.go (97.8%)</option>
 				
 				<option value="file1">calculator/internal/config/config.go (100.0%)</option>
 				
@@ -77,7 +77,7 @@
 				
 				<option value="file10">calculator/internal/problem/problem.go (100.0%)</option>
 				
-				<option value="file11">calculator/internal/server/server.go (97.2%)</option>
+				<option value="file11">calculator/internal/server/server.go (96.7%)</option>
 				
 				<option value="file12">calculator/internal/server/static.go (97.3%)</option>
 				
@@ -113,6 +113,7 @@ import (
         "fmt"
         "io"
         "log/slog"
+        "net"
         "net/http"
         "os"
         "os/signal"
@@ -137,21 +138,21 @@ func run(args []string, getenv func(string) string, stdout, stderr io.Writer) in
 </span>}
 
 func runContext(ctx context.Context, args []string, getenv func(string) string, stdout, stderr io.Writer) int {
-        <span class="cov10" title="9">flags := flag.NewFlagSet("server", flag.ContinueOnError)
+        <span class="cov9" title="9">flags := flag.NewFlagSet("server", flag.ContinueOnError)
         flags.SetOutput(stderr)
         healthcheck := flags.Bool("healthcheck", false, "probe /healthz on 127.0.0.1 and exit 0 when it answers 200")
         if err := flags.Parse(args); err != nil </span>{
                 <span class="cov1" title="1">return 2
 </span>        }
 
-        <span class="cov9" title="8">cfg, err := config.Load(getenv)
+        <span class="cov8" title="8">cfg, err := config.Load(getenv)
         if err != nil </span>{
                 <span class="cov3" title="2">_, _ = fmt.Fprintf(stderr, "config error: %v\n", err)
                 return 1
 </span>        }
 
-        <span class="cov8" title="6">if *healthcheck </span>{
-                <span class="cov6" title="4">if err := probe(ctx, "http://127.0.0.1:"+strconv.Itoa(cfg.Port)+"/healthz"); err != nil </span>{
+        <span class="cov7" title="6">if *healthcheck </span>{
+                <span class="cov6" title="4">if err := probe(ctx, healthURL(cfg)); err != nil </span>{
                         <span class="cov5" title="3">_, _ = fmt.Fprintf(stderr, "healthcheck failed: %v\n", err)
                         return 1
 </span>                }
@@ -173,6 +174,16 @@ func newLogger(w io.Writer, cfg config.Config) *slog.Logger {
                 <span class="cov3" title="2">return slog.New(slog.NewTextHandler(w, opts))
 </span>        }
         <span class="cov5" title="3">return slog.New(slog.NewJSONHandler(w, opts))</span>
+}
+
+// healthURL is where the running service answers /healthz. A wildcard listen address such as 0.0.0.0
+// is reached through loopback, because the probe runs inside the same container or host.
+func healthURL(cfg config.Config) string {
+        <span class="cov10" title="11">host := cfg.Host
+        if ip := net.ParseIP(host); host == "" || (ip != nil &amp;&amp; ip.IsUnspecified()) </span>{
+                <span class="cov5" title="3">host = "127.0.0.1"
+</span>        }
+        <span class="cov10" title="11">return "http://" + net.JoinHostPort(host, strconv.Itoa(cfg.Port)) + "/healthz"</span>
 }
 
 // probe sends GET to url with a 3 second limit and wants a 200.
@@ -201,6 +212,7 @@ package config
 import (
         "fmt"
         "log/slog"
+        "net"
         "net/url"
         "strconv"
         "strings"
@@ -209,6 +221,7 @@ import (
 
 // Config holds the validated settings.
 type Config struct {
+        Host               string
         Port               int
         StaticDir          string
         CORSAllowedOrigins []string
@@ -223,46 +236,62 @@ type Config struct {
 // Load reads the settings through getenv. An unset or empty variable takes its default.
 // A bad value returns an error that names the variable.
 func Load(getenv func(string) string) (Config, error) {
-        <span class="cov7" title="31">cfg := Config{
+        <span class="cov7" title="41">cfg := Config{
                 StaticDir: getenv("STATIC_DIR"),
 </span>        }
-        <span class="cov7" title="31">var err error
-        if cfg.Port, err = intVar(getenv, "PORT", 8080, 1, 65535); err != nil </span>{
-                <span class="cov4" title="5">return Config{}, err
+        <span class="cov7" title="41">var err error
+        if cfg.Host, err = hostVar(getenv, "LISTEN_HOST"); err != nil </span>{
+                <span class="cov3" title="3">return Config{}, err
 </span>        }
-        <span class="cov7" title="26">if cfg.RateLimitPerMinute, err = intVar(getenv, "RATE_LIMIT_PER_MINUTE", 120, 0, 1_000_000); err != nil </span>{
+        <span class="cov7" title="38">if cfg.Port, err = intVar(getenv, "PORT", 8080, 1, 65535); err != nil </span>{
+                <span class="cov3" title="5">return Config{}, err
+</span>        }
+        <span class="cov7" title="33">if cfg.RateLimitPerMinute, err = intVar(getenv, "RATE_LIMIT_PER_MINUTE", 120, 0, 1_000_000); err != nil </span>{
                 <span class="cov2" title="2">return Config{}, err
 </span>        }
-        <span class="cov7" title="24">if cfg.RateLimitBurst, err = intVar(getenv, "RATE_LIMIT_BURST", 30, 1, 1_000_000); err != nil </span>{
+        <span class="cov7" title="31">if cfg.RateLimitBurst, err = intVar(getenv, "RATE_LIMIT_BURST", 30, 1, 1_000_000); err != nil </span>{
                 <span class="cov2" title="2">return Config{}, err
 </span>        }
-        <span class="cov7" title="22">seconds, err := intVar(getenv, "SHUTDOWN_TIMEOUT_SECONDS", 10, 1, 3600)
+        <span class="cov7" title="29">seconds, err := intVar(getenv, "SHUTDOWN_TIMEOUT_SECONDS", 10, 1, 3600)
         if err != nil </span>{
                 <span class="cov2" title="2">return Config{}, err
 </span>        }
-        <span class="cov6" title="20">cfg.ShutdownTimeout = time.Duration(seconds) * time.Second
+        <span class="cov7" title="27">cfg.ShutdownTimeout = time.Duration(seconds) * time.Second
 </span>
-        <span class="cov6" title="20">if cfg.TrustProxy, err = boolVar(getenv, "TRUST_PROXY", false); err != nil </span>{
+        <span class="cov7" title="27">if cfg.TrustProxy, err = boolVar(getenv, "TRUST_PROXY", false); err != nil </span>{
                 <span class="cov1" title="1">return Config{}, err
 </span>        }
-        <span class="cov6" title="19">if cfg.LogLevel, err = levelVar(getenv, "LOG_LEVEL"); err != nil </span>{
+        <span class="cov7" title="26">if cfg.LogLevel, err = levelVar(getenv, "LOG_LEVEL"); err != nil </span>{
                 <span class="cov1" title="1">return Config{}, err
 </span>        }
-        <span class="cov6" title="18">if cfg.LogFormat, err = formatVar(getenv, "LOG_FORMAT"); err != nil </span>{
+        <span class="cov6" title="25">if cfg.LogFormat, err = formatVar(getenv, "LOG_FORMAT"); err != nil </span>{
                 <span class="cov1" title="1">return Config{}, err
 </span>        }
-        <span class="cov6" title="17">if cfg.CORSAllowedOrigins, err = originsVar(getenv, "CORS_ALLOWED_ORIGINS"); err != nil </span>{
+        <span class="cov6" title="24">if cfg.CORSAllowedOrigins, err = originsVar(getenv, "CORS_ALLOWED_ORIGINS"); err != nil </span>{
                 <span class="cov5" title="9">return Config{}, err
 </span>        }
-        <span class="cov5" title="8">return cfg, nil</span>
+        <span class="cov5" title="15">return cfg, nil</span>
+}
+
+// hostVar returns the address to listen on. Loopback is the default, so a local run never opens the
+// machine to the network (and never triggers a firewall prompt). Docker sets 0.0.0.0.
+func hostVar(getenv func(string) string, name string) (string, error) {
+        <span class="cov7" title="41">raw := strings.TrimSpace(getenv(name))
+        if raw == "" </span>{
+                <span class="cov7" title="31">return "127.0.0.1", nil
+</span>        }
+        <span class="cov5" title="10">if raw == "localhost" || net.ParseIP(raw) != nil </span>{
+                <span class="cov4" title="7">return raw, nil
+</span>        }
+        <span class="cov3" title="3">return "", fmt.Errorf("%s must be an IP address such as 127.0.0.1 or 0.0.0.0, got %q", name, raw)</span>
 }
 
 func intVar(getenv func(string) string, name string, def, lo, hi int) (int, error) {
-        <span class="cov10" title="103">raw := strings.TrimSpace(getenv(name))
+        <span class="cov10" title="131">raw := strings.TrimSpace(getenv(name))
         if raw == "" </span>{
-                <span class="cov9" title="88">return def, nil
+                <span class="cov9" title="116">return def, nil
 </span>        }
-        <span class="cov6" title="15">n, err := strconv.Atoi(raw)
+        <span class="cov5" title="15">n, err := strconv.Atoi(raw)
         if err != nil || n &lt; lo || n &gt; hi </span>{
                 <span class="cov5" title="11">return 0, fmt.Errorf("%s must be a whole number from %d to %d, got %q", name, lo, hi, raw)
 </span>        }
@@ -270,9 +299,9 @@ func intVar(getenv func(string) string, name string, def, lo, hi int) (int, erro
 }
 
 func boolVar(getenv func(string) string, name string, def bool) (bool, error) {
-        <span class="cov6" title="20">raw := strings.TrimSpace(getenv(name))
+        <span class="cov7" title="27">raw := strings.TrimSpace(getenv(name))
         if raw == "" </span>{
-                <span class="cov6" title="18">return def, nil
+                <span class="cov6" title="25">return def, nil
 </span>        }
         <span class="cov2" title="2">b, err := strconv.ParseBool(raw)
         if err != nil </span>{
@@ -282,10 +311,10 @@ func boolVar(getenv func(string) string, name string, def bool) (bool, error) {
 }
 
 func levelVar(getenv func(string) string, name string) (slog.Level, error) {
-        <span class="cov6" title="19">raw := strings.ToLower(strings.TrimSpace(getenv(name)))
+        <span class="cov7" title="26">raw := strings.ToLower(strings.TrimSpace(getenv(name)))
         switch raw </span>{
         case "", "info":
-                <span class="cov5" title="13">return slog.LevelInfo, nil</span>
+                <span class="cov6" title="20">return slog.LevelInfo, nil</span>
         case "debug":
                 <span class="cov2" title="2">return slog.LevelDebug, nil</span>
         case "warn":
@@ -297,10 +326,10 @@ func levelVar(getenv func(string) string, name string) (slog.Level, error) {
 }
 
 func formatVar(getenv func(string) string, name string) (string, error) {
-        <span class="cov6" title="18">raw := strings.ToLower(strings.TrimSpace(getenv(name)))
+        <span class="cov6" title="25">raw := strings.ToLower(strings.TrimSpace(getenv(name)))
         switch raw </span>{
         case "", "json":
-                <span class="cov6" title="16">return "json", nil</span>
+                <span class="cov6" title="23">return "json", nil</span>
         case "text":
                 <span class="cov1" title="1">return "text", nil</span>
         }
@@ -309,11 +338,11 @@ func formatVar(getenv func(string) string, name string) (string, error) {
 
 // originsVar parses a comma-separated allowlist. Each entry is a bare origin such as https://app.example.com.
 func originsVar(getenv func(string) string, name string) ([]string, error) {
-        <span class="cov6" title="17">var origins []string
+        <span class="cov6" title="24">var origins []string
         for _, entry := range strings.Split(getenv(name), ",") </span>{
-                <span class="cov6" title="21">entry = strings.TrimSpace(entry)
+                <span class="cov7" title="28">entry = strings.TrimSpace(entry)
                 if entry == "" </span>{
-                        <span class="cov5" title="9">continue</span>
+                        <span class="cov6" title="16">continue</span>
                 }
                 <span class="cov5" title="12">u, err := url.Parse(entry)
                 if err != nil || (u.Scheme != "http" &amp;&amp; u.Scheme != "https") || u.Host == "" || u.Path != "" || u.RawQuery != "" || u.Fragment != "" || u.User != nil </span>{
@@ -321,7 +350,7 @@ func originsVar(getenv func(string) string, name string) ([]string, error) {
 </span>                }
                 <span class="cov3" title="3">origins = append(origins, entry)</span>
         }
-        <span class="cov5" title="8">return origins, nil</span>
+        <span class="cov5" title="15">return origins, nil</span>
 }
 </pre>
 		
@@ -1099,7 +1128,7 @@ func (l *limiter) sweep() {
 }
 
 func (l *limiter) size() int {
-        <span class="cov4" title="4">l.mu.Lock()
+        <span class="cov5" title="5">l.mu.Lock()
         defer l.mu.Unlock()
         return len(l.buckets)
 </span>}
@@ -1405,10 +1434,15 @@ func withMiddleware(ctx context.Context, next http.Handler, cfg config.Config, l
         return middleware.RequestID(chained)
 </span>}
 
-// Run listens on cfg.Port and serves until ctx ends, then shuts down within cfg.ShutdownTimeout.
+// Run listens on cfg.Host and cfg.Port and serves until ctx ends, then shuts down within cfg.ShutdownTimeout.
+// An empty Host means loopback, the same default config.Load applies.
 func Run(ctx context.Context, cfg config.Config, logger *slog.Logger) error {
+        <span class="cov2" title="2">host := cfg.Host
+        if host == "" </span>{
+                <span class="cov1" title="1">host = "127.0.0.1"
+</span>        }
         <span class="cov2" title="2">var lc net.ListenConfig
-        ln, err := lc.Listen(ctx, "tcp", ":"+strconv.Itoa(cfg.Port))
+        ln, err := lc.Listen(ctx, "tcp", net.JoinHostPort(host, strconv.Itoa(cfg.Port)))
         if err != nil </span>{
                 <span class="cov1" title="1">return fmt.Errorf("listen: %w", err)
 </span>        }

@@ -29,7 +29,7 @@ The image runs as a non-root user and its health check calls the binary itself, 
 
 ### Local development
 
-You need Go 1.27.0, Node 22.23.2 (the version in `.nvmrc`) and npm 10.
+You need Go 1.27 (go.mod pins the 1.27.2 toolchain and Go downloads it on first use), Node 22.23.2 (the version in `.nvmrc`) and npm 10.
 
 ```bash
 npm ci
@@ -198,7 +198,7 @@ A bad value stops the process at start-up with a message that names the variable
 | `npm run check` | lint, tests, coverage, build, evals and the eval coverage table |
 | `npm run check:all` | `check` plus audit, the mutation audit and the Docker evals |
 
-The coverage report is committed in [docs/coverage/](docs/coverage/SUMMARY.md). The HTML reports are next to it.
+The coverage report is committed in [docs/coverage/](docs/coverage/SUMMARY.md). The HTML reports are next to it. At v1.0.0 the backend covers 99.3% of statements (gate 90%) and the frontend 100% of lines (gate 80%).
 
 GitHub Actions runs the same checks. I could only validate the workflow file here, not run it on a real runner. The `evals` job is meant to be a required status check, which is what blocks a merge.
 

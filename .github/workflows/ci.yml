@@ -27,7 +27,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  GO_VERSION: "1.27.0"
+  GO_VERSION: "1.27.2"
   NODE_VERSION: "22.23.2"
   # Root tooling for diagrams pulls a full Chrome. No job here needs it.
   PUPPETEER_SKIP_DOWNLOAD: "1"

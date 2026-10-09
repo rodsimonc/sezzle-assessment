@@ -2,12 +2,13 @@
 # The build context is the repo root: docker build -t calculator:1.0.0 .
 #
 # Base images, pinned by exact tag (checked 2026-10-09):
-#   node:22.23.2-alpine                        build stage for the React app
-#   golang:1.27.0-alpine                       build stage for the Go service
+#   node:22.23.2-alpine3.23                    build stage for the React app
+#   golang:1.27.2-alpine3.23                   build stage for the Go service (1.27.0 has stdlib CVEs fixed in 1.27.2)
 #   gcr.io/distroless/static-debian13:nonroot  runtime. Its tag moves, so the digest below pins it.
+#   The alpine3.23 variants pin the Alpine release, so the build stages stay reproducible.
 
 # Stage 1: frontend bundle
-FROM node:22.23.2-alpine AS web
+FROM node:22.23.2-alpine3.23 AS web
 
 # Only the frontend workspace gets installed. Puppeteer (root tooling for diagrams) stays out.
 ENV PUPPETEER_SKIP_DOWNLOAD=1
@@ -24,7 +25,7 @@ COPY frontend frontend
 RUN npm run build --workspace=frontend
 
 # Stage 2: backend binary
-FROM golang:1.27.0-alpine AS api
+FROM golang:1.27.2-alpine3.23 AS api
 
 WORKDIR /src/backend
 

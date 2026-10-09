@@ -5,6 +5,8 @@ export default defineConfig({
   testDir: './v1.0.0',
   forbidOnly: true,
   retries: 0,
+  // Delivery evals build, cover and audit the same tree, so they run one at a time.
+  workers: process.argv.includes('--project=delivery') ? 1 : undefined,
   timeout: 30_000,
   expect: { timeout: 5_000 },
   reporter: [['list'], ['html', { open: 'never', outputFolder: 'playwright-report' }]],

@@ -53,7 +53,7 @@ function main() {
   );
   const frontend = readFrontendPercent(
     loadJson(
-      join(ROOT, 'frontend', 'coverage', 'coverage-summary.json'),
+      join(COVERAGE_DIR, 'frontend', 'coverage-summary.json'),
       'Run npm run coverage:frontend first.',
     ),
   );

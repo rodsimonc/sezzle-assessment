@@ -1,8 +1,8 @@
 flowchart LR
   subgraph build["Build stages in one Dockerfile, context is the repo root"]
     direction TB
-    web["Stage web: node:22.23.2-alpine<br/>npm ci for the frontend workspace<br/>npm run build gives frontend/dist"]:::stage
-    api["Stage api: golang:1.27.0-alpine<br/>CGO_ENABLED=0, -trimpath, -ldflags -s -w<br/>gives /out/server"]:::stage
+    web["Stage web: node:22.23.2-alpine3.23<br/>npm ci for the frontend workspace<br/>npm run build gives frontend/dist"]:::stage
+    api["Stage api: golang:1.27.2-alpine3.23<br/>CGO_ENABLED=0, -trimpath, -ldflags -s -w<br/>gives /out/server"]:::stage
   end
 
   subgraph image["Runtime image: distroless static-debian13 nonroot, under 40 MB"]

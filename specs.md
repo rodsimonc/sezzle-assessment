@@ -20,8 +20,8 @@ It is also a take-home assessment, so the design, the tests and the docs matter 
 
 | Layer | Technology | Version | Why |
 |-------|-----------|---------|-----|
-| Backend language | Go | 1.27.0 | The brief prefers Go. Installed with winget on 2026-10-09. |
-| Backend framework | Go standard library (`net/http`, `log/slog`) | 1.27.0 | Go 1.22+ routing covers every route here. Zero runtime dependencies. |
+| Backend language | Go | 1.27.2 | The brief prefers Go. Installed with winget on 2026-10-09 as 1.27.0. `go.mod` pins the 1.27.2 toolchain because `govulncheck` found standard library fixes in it. |
+| Backend framework | Go standard library (`net/http`, `log/slog`) | 1.27.2 | Go 1.22+ routing covers every route here. Zero runtime dependencies. |
 | Frontend runtime | Node.js | 22.23.2 | Already on the machine. Vite 8 and Vitest 5 need 22.12 or newer. |
 | Package manager | npm | 10.9.8 | Ships with Node. pnpm and yarn aren't installed. |
 | Frontend language | TypeScript (strict) | 6.0.3 | `typescript-eslint` 8.71.1 requires below 6.1.0, so TypeScript 7 is out. |
@@ -216,7 +216,7 @@ Docker base images are pinned by exact tag in the Dockerfile and recorded in the
 
 ### From the interview
 
-- **Go toolchain:** Go 1.27.0 installed with winget. No Docker-only fallback.
+- **Go toolchain:** Go 1.27.0 installed with winget. `go.mod` selects 1.27.2, which Go downloads on first use. No Docker-only fallback.
 - **Location:** `C:\Users\rodsi\Desktop\Tupro\desarrollo web y movil\Sezzle assesment`, next to the other projects, with its own git repository.
 - **Language:** English everywhere.
 - **Structure to follow:** AIDLC 10X files, REST conventions, layered architecture, eval suite. All four.
