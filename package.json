@@ -1,0 +1,59 @@
+{
+  "name": "calculator",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "workspaces": [
+    "frontend",
+    "evals"
+  ],
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c blue,green \"npm:dev:backend\" \"npm:dev:frontend\"",
+    "dev:backend": "go -C backend run ./cmd/server",
+    "dev:frontend": "npm run dev -w frontend",
+    "build": "npm run build:frontend && npm run build:backend",
+    "build:frontend": "npm run build -w frontend",
+    "build:backend": "node scripts/build-backend.mjs",
+    "start": "node scripts/start.mjs",
+    "test": "npm run test:backend && npm run test:frontend && npm run test:scripts",
+    "test:backend": "go -C backend test ./...",
+    "test:frontend": "npm run test -w frontend",
+    "test:scripts": "node --test \"scripts/**/*.test.mjs\"",
+    "coverage": "npm run coverage:backend && npm run coverage:frontend && npm run coverage:report",
+    "coverage:backend": "node scripts/coverage-backend.mjs",
+    "coverage:frontend": "npm run coverage -w frontend",
+    "coverage:report": "node scripts/coverage-report.mjs",
+    "lint": "npm run lint:backend && npm run lint:frontend && npm run lint:docs",
+    "lint:backend": "node scripts/lint-backend.mjs",
+    "lint:frontend": "npm run lint -w frontend",
+    "lint:docs": "node scripts/check-writing-style.mjs && node scripts/check-links.mjs",
+    "audit": "npm run audit:backend && npm run audit:frontend",
+    "audit:backend": "go -C backend run golang.org/x/vuln/cmd/govulncheck@v1.8.0 ./...",
+    "audit:frontend": "npm audit --audit-level=high",
+    "evals": "npm run build && npm run evals:api && npm run evals:ui",
+    "evals:api": "npm run evals:api -w evals",
+    "evals:ui": "npm run evals:ui -w evals",
+    "evals:delivery": "npm run evals:delivery -w evals",
+    "evals:coverage": "npm run coverage-table -w evals",
+    "evals:audit": "npm run mutation-audit -w evals",
+    "e2e": "npm run evals:ui",
+    "diagrams": "node scripts/export-diagrams.mjs",
+    "docker:build": "docker build -t calculator:1.0.0 .",
+    "docker:run": "docker run --rm -p 8080:8080 calculator:1.0.0",
+    "check": "npm run lint && npm test && npm run coverage && npm run build && npm run evals && npm run evals:coverage",
+    "check:all": "npm run check && npm run audit && npm run evals:audit && npm run evals:delivery"
+  },
+  "devDependencies": {
+    "@mermaid-js/mermaid-cli": "12.0.0",
+    "concurrently": "10.0.6",
+    "puppeteer": "25.13.0"
+  },
+  "overrides": {
+    "@zenuml/core": {
+      "playwright-core": "1.64.0"
+    }
+  }
+}

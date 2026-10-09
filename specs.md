@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-09
 **Owner:** @rodsimonc
-**Contract version:** 0.1.0
+**Contract version:** 0.1.1
 
 This is the contract that came out of the specification interview. Every line is a decision. To change one, edit this file and bump the version in section 9 first.
 
@@ -203,7 +203,12 @@ tsx                                    @ 4.23.15
 concurrently                           @ 10.0.6
 @mermaid-js/mermaid-cli                @ 12.0.0
 puppeteer                              @ 25.13.0
+
+# Resolution override (root package.json "overrides")
+@zenuml/core > playwright-core         @ 1.64.0
 ```
+
+`@mermaid-js/mermaid-cli` 12.0.0 pulls in `@zenuml/core` 3.50.1, which lists `playwright-core` 1.57.0 as an optional peer. `npm install` accepts that beside the 1.64.0 from `@playwright/test`, but `npm ci` rejects the lockfile. The override sets the peer to 1.64.0. No pin above changed.
 
 Docker base images are pinned by exact tag in the Dockerfile and recorded in the README.
 
@@ -253,6 +258,7 @@ Docker base images are pinned by exact tag in the Dockerfile and recorded in the
 ## 9. Contract history
 
 - **0.1.0 (2026-10-09):** first version, written from the interview. Scaffolding proceeds.
+- **0.1.1 (2026-10-09):** scaffolding found that `npm ci` failed on an optional peer of `@zenuml/core`. Section 6 now records a root `overrides` entry. No pin changed.
 
 ---
 

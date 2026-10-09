@@ -1,0 +1,21 @@
+{
+  "name": "calculator-evals",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "evals:api": "playwright test --project=api",
+    "evals:ui": "playwright test --project=ui",
+    "evals:delivery": "playwright test --project=delivery",
+    "coverage-table": "tsx tools/coverage.ts",
+    "mutation-audit": "tsx tools/mutation-audit.ts",
+    "typecheck": "tsc -p . --noEmit"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@playwright/test": "1.64.0",
+    "@types/node": "22.20.5",
+    "tsx": "4.23.15",
+    "yaml": "2.9.1"
+  }
+}
