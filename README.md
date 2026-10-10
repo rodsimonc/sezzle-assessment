@@ -38,6 +38,15 @@ npm run dev
 
 The backend listens on :8080 and Vite on :5173. Open http://localhost:5173. Vite proxies `/api` and `/healthz` to the backend.
 
+To run the two halves in separate terminals:
+
+| Terminal | Command | Serves |
+|----------|---------|--------|
+| 1, backend | `npm run dev:backend` | The API on http://127.0.0.1:8080 (check it with `curl http://127.0.0.1:8080/healthz`) |
+| 2, frontend | `npm run dev:frontend` | The keypad on http://localhost:5173, with hot reload |
+
+The frontend needs the backend, because every number it shows comes from the API. With the backend stopped, the keypad shows an error banner instead of a result.
+
 ### Production build without Docker
 
 ```bash
@@ -232,6 +241,16 @@ To add behaviour: write the golden case in the release file, write the eval, wat
 - **Strict CSP.** The page uses no inline scripts or styles, so the policy is `default-src 'self'` plus a few `'self'` directives.
 - **Rate limiter in memory.** A token bucket per client address. Simple and testable with a fake clock.
 - **Pinned versions.** Every dependency and base image has an exact version. TypeScript is 6.0.3 because `typescript-eslint` doesn't support 7 yet.
+
+## Assumptions
+
+- **Numbers are IEEE 754 doubles.** That is what JSON and Go's `float64` give, and it is enough for a calculator. The 15-digit rounding hides the noise.
+- **Percentage means "a percent of b".** `15 % 200` is 30. The brief doesn't define it, so I picked the reading that a keypad user expects when they type a number, the key and a second number.
+- **Binary operations take exactly two operands, unary ones exactly one.** Chaining happens in the UI, one request per step.
+- **One user per browser.** History and memory belong to the person at the keyboard, so nothing is stored on the server and there is no login.
+- **The browser is a current Chromium, Firefox or Safari.** The UI evals run on Chromium only. The rest is expected to work but isn't tested.
+- **The API sits on the same origin as the page.** That is why the bundled app needs no CORS. A different origin goes through `CORS_ALLOWED_ORIGINS`.
+- **English only.** Labels, errors and docs are in English.
 
 ## Known limits
 
